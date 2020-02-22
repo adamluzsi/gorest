@@ -12,22 +12,24 @@ func ExampleController() {
 	mux := http.NewServeMux()
 
 	var teapotHandler http.Handler = &gorest.Controller{
-		ContextHandler: teapotResourceHandler{},
-		Show:           ExampleHTTPHandler{},
+		ContextHandler: TeapotResourceHandler{},
+		Show:           TeapotShowAction{},
 	}
 
 	// to mount into a serve multiplexer
 	teapotHandler = http.StripPrefix(`/teapots`, teapotHandler)
 	mux.Handle(`/teapots`, teapotHandler)
 	mux.Handle(`/teapots/`, teapotHandler)
-	// or use the simplified helper function
-	gorest.Mount(mux, `/teapots`, &gorest.Controller{Show: ExampleHTTPHandler{}})
+
+	// OR do the same, but with this function.
+	// I often forget to mount my controller also to the path without slash suffix.
+	gorest.Mount(mux, `/teapots`, &gorest.Controller{Show: TeapotShowAction{}})
 
 }
 
-type teapotResourceHandler struct{}
+type TeapotResourceHandler struct{}
 
-func (t teapotResourceHandler) WithResource(ctx context.Context, teapotID string) (newCTX context.Context, found bool, err error) {
+func (t TeapotResourceHandler) WithResource(ctx context.Context, teapotID string) (newCTX context.Context, found bool, err error) {
 	teapot, found, err := lookupTeapotByID(ctx, teapotID)
 	if err != nil {
 		// teapot lookup encountered an unexpected error
@@ -41,9 +43,9 @@ func (t teapotResourceHandler) WithResource(ctx context.Context, teapotID string
 	return context.WithValue(ctx, `teapot`, teapot), true, nil
 }
 
-type ExampleHTTPHandler struct{}
+type TeapotShowAction struct{}
 
-func (e ExampleHTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (e TeapotShowAction) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	teapot := r.Context().Value(`teapot`).(Teapot)
 	_, _ = fmt.Fprintf(w, `my teapot resource: %v`, teapot)
 }
