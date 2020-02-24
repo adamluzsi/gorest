@@ -5,9 +5,7 @@ import (
 	"strings"
 )
 
-func Mount(multiplexer interface {
-	Handle(pattern string, handler http.Handler)
-}, pattern string, handler *Controller) {
+func Mount(multiplexer interface{ Handle(pattern string, handler http.Handler) }, pattern string, handler http.Handler) {
 	pattern = `/` + strings.TrimPrefix(pattern, `/`)
 	pattern = strings.TrimSuffix(pattern, `/`)
 	h := http.StripPrefix(pattern, handler)
