@@ -37,3 +37,11 @@ func (d ExampleTestController) Update(w http.ResponseWriter, r *http.Request) {
 func (d ExampleTestController) Delete(w http.ResponseWriter, r *http.Request) {
 	_, _ = fmt.Fprintf(w, `delete:%s`, r.Context().Value(`id`))
 }
+
+func (d ExampleTestController) NotFound(w http.ResponseWriter, r *http.Request) {
+	_, _ = fmt.Fprintf(w, `not-found`)
+}
+
+func (d ExampleTestController) InternalServerError(w http.ResponseWriter, r *http.Request) {
+	_, _ = fmt.Fprintf(w, `internal-server-error`)
+}

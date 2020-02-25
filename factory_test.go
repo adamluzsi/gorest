@@ -1,6 +1,7 @@
 package gorest_test
 
 import (
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -17,9 +18,11 @@ func TestNewHandler(t *testing.T) {
 	var request = func(t *testcase.T) *httptest.ResponseRecorder {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(t.I(`method`).(string), t.I(`path`).(string), nil)
-		gorest.NewHandler(ExampleTestController{}).ServeHTTP(w, r)
+		gorest.NewHandler(t.I(`controller`)).ServeHTTP(w, r)
 		return w
 	}
+
+	s.Let(`controller`, func(t *testcase.T) interface{} { return ExampleTestController{} })
 
 	s.Describe(`#List`, func(s *testcase.Spec) {
 		s.Let(`method`, func(t *testcase.T) interface{} { return http.MethodGet })
@@ -57,7 +60,7 @@ func TestNewHandler(t *testing.T) {
 		})
 	})
 
-	s.Describe(`Delete`, func(s *testcase.Spec) {
+	s.Describe(`#Delete`, func(s *testcase.Spec) {
 		s.Let(`method`, func(t *testcase.T) interface{} { return http.MethodDelete })
 		s.Let(`path`, func(t *testcase.T) interface{} { return `/42` })
 
@@ -65,4 +68,35 @@ func TestNewHandler(t *testing.T) {
 			require.Contains(t, request(t).Body.String(), `delete:42`)
 		})
 	})
+
+	s.Describe(`#NotFound`, func(s *testcase.Spec) {
+		s.Let(`method`, func(t *testcase.T) interface{} { return http.MethodGet })
+		s.Let(`path`, func(t *testcase.T) interface{} { return `/not-found` })
+
+		s.Then(`it will use the not found method to reply`, func(t *testcase.T) {
+			require.Contains(t, request(t).Body.String(), `not-found`)
+		})
+	})
+
+	s.Describe(`#InternalServerError`, func(s *testcase.Spec) {
+		s.Let(`controller`, func(t *testcase.T) interface{} {
+			return struct {
+				InternalServerErrorController
+				ErrorContextHandler
+			}{
+				InternalServerErrorController: InternalServerErrorController{
+					Code: 500,
+					Msg:  "custom-internal-server-error",
+				},
+				ErrorContextHandler: ErrorContextHandler{Err: errors.New(`boom`)},
+			}
+		})
+		s.Let(`method`, func(t *testcase.T) interface{} { return http.MethodGet })
+		s.Let(`path`, func(t *testcase.T) interface{} { return `/42` })
+
+		s.Then(`it will use the not found method to reply`, func(t *testcase.T) {
+			require.Contains(t, request(t).Body.String(), `custom-internal-server-error`)
+		})
+	})
+
 }
