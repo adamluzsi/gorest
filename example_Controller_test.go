@@ -9,7 +9,9 @@ import (
 )
 
 func ExampleController() {
-	var _ gorest.Controller = ExampleTestController{}
+	if err := http.ListenAndServe(`:8080`, gorest.NewHandler(ExampleTestController{})); err != nil {
+		panic(err.Error())
+	}
 }
 
 type ExampleTestController struct{}
@@ -45,3 +47,5 @@ func (d ExampleTestController) NotFound(w http.ResponseWriter, r *http.Request) 
 func (d ExampleTestController) InternalServerError(w http.ResponseWriter, r *http.Request) {
 	_, _ = fmt.Fprintf(w, `internal-server-error`)
 }
+
+var _ gorest.ControllerWithErrorHandling = ExampleTestController{}

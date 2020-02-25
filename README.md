@@ -35,6 +35,98 @@ and how to setup the request context to include this resource instance.
 
 * [godoc examples](https://godoc.org/github.com/adamluzsi/gorest#pkg-examples)
 
+### Using a controller struct
+
+A controller that only implement certain actions
+
+```go
+package main
+
+import (
+	"context"
+	"fmt"
+	"net/http"
+
+	"github.com/adamluzsi/gorest"
+)
+
+func main() {
+    mux := http.NewServeMux()
+    gorest.Mount(mux, `/xys/`, gorest.NewHandler(XYController{}))
+
+    if err := http.ListenAndServe(`:8080`, mux); err != nil {
+		panic(err.Error())
+	}
+}
+
+type XYController struct{}
+
+func (ctrl XYController) List(w http.ResponseWriter, r *http.Request) {
+	_, _ = fmt.Fprintf(w, `list`)
+}
+
+func (ctrl XYController) ContextWithResource(ctx context.Context, resourceID string) (newContext context.Context, found bool, err error) {
+	return context.WithValue(ctx, `id`, resourceID), true, nil
+}
+
+func (ctrl XYController) Show(w http.ResponseWriter, r *http.Request) {
+	_, _ = fmt.Fprintf(w, `show:%s`, r.Context().Value(`id`))
+}
+
+
+```
+
+Or if the controller implements all resource, then the handler will use the other methods as well.
+It is documented by the `gorest.Controller` interface.
+
+```go
+package main
+
+import (
+	"context"
+	"fmt"
+	"net/http"
+
+	"github.com/adamluzsi/gorest"
+)
+
+type XYController struct{}
+
+func (ctrl XYController) ContextWithResource(ctx context.Context, resourceID string) (newContext context.Context, found bool, err error) {
+	return context.WithValue(ctx, `id`, resourceID), true, nil
+}
+
+func (ctrl XYController) Create(w http.ResponseWriter, r *http.Request) {
+	_, _ = fmt.Fprintf(w, `create`)
+}
+
+func (ctrl XYController) List(w http.ResponseWriter, r *http.Request) {
+	_, _ = fmt.Fprintf(w, `list`)
+}
+
+func (ctrl XYController) Show(w http.ResponseWriter, r *http.Request) {
+	_, _ = fmt.Fprintf(w, `show:%s`, r.Context().Value(`id`))
+}
+
+func (ctrl XYController) Update(w http.ResponseWriter, r *http.Request) {
+	_, _ = fmt.Fprintf(w, `update:%s`, r.Context().Value(`id`))
+}
+
+func (ctrl XYController) Delete(w http.ResponseWriter, r *http.Request) {
+	_, _ = fmt.Fprintf(w, `delete:%s`, r.Context().Value(`id`))
+}
+
+func (ctrl XYController) NotFound(w http.ResponseWriter, r *http.Request) {
+	_, _ = fmt.Fprintf(w, `not-found`)
+}
+
+func (ctrl XYController) InternalServerError(w http.ResponseWriter, r *http.Request) {
+	_, _ = fmt.Fprintf(w, `internal-server-error`)
+}
+``` 
+
+### Using gorest.Handler directly
+
 ```go
 teapotController := &gorest.Controller{
     ContextHandler: TeapotResourceHandler{},

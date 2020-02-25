@@ -8,11 +8,7 @@ import (
 	"github.com/adamluzsi/gorest"
 )
 
-func ExampleController_Handle() {
-	resource := &gorest.Handler{
-		ContextHandler: ContextHandlerForResource{},
-	}
-
+func ExampleHandler_Mount() {
 	subresource := &gorest.Handler{
 		ContextHandler: ContextHandlerForSubResource{},
 		Show: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -25,10 +21,22 @@ func ExampleController_Handle() {
 		}),
 	}
 
+	resource := &gorest.Handler{
+		ContextHandler: ContextHandlerForResource{},
+	}
+
 	_ = resource.Mount(`subresources`, subresource)
 
 	mux := http.NewServeMux()
-	gorest.Mount(mux, `/routes`, resource)
+
+	// this will cause http.ServeMux to have endpoints like:
+	//	GET /resources
+	//	POST /resources
+	//	GET /resources/{resourceID}
+	//	GET /resources/{resourceID}/subresources
+	//	GET /resources/{resourceID}/subresources/{subresourceID}
+	// and so on
+	gorest.Mount(mux, `/resources`, resource)
 }
 
 type Resource struct{ ID string }
