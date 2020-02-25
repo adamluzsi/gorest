@@ -25,7 +25,7 @@ func ExampleHandler_Mount() {
 		ContextHandler: ContextHandlerForResource{},
 	}
 
-	_ = resource.Mount(`subresources`, subresource)
+	gorest.Must(resource.Mount(`subresources`, subresource))
 
 	mux := http.NewServeMux()
 
