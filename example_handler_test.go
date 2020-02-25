@@ -8,10 +8,10 @@ import (
 	"github.com/adamluzsi/gorest"
 )
 
-func ExampleController() {
+func ExampleHandler() {
 	mux := http.NewServeMux()
 
-	var teapotHandler http.Handler = &gorest.Controller{
+	var teapotHandler http.Handler = &gorest.Handler{
 		ContextHandler: TeapotResourceHandler{},
 		Show:           TeapotShowAction{},
 	}
@@ -23,7 +23,7 @@ func ExampleController() {
 
 	// OR do the same, but with this function.
 	// I often forget to mount my controller also to the path without slash suffix.
-	gorest.Mount(mux, `/teapots`, &gorest.Controller{Show: TeapotShowAction{}})
+	gorest.Mount(mux, `/teapots`, &gorest.Handler{Show: TeapotShowAction{}})
 
 }
 

@@ -19,7 +19,7 @@ func TestMount(t *testing.T) {
 		_, _ = fmt.Fprintf(w, `%s`, ctxHandler.GetResourceID(r.Context()))
 	})
 
-	resources := &gorest.Controller{
+	resources := &gorest.Handler{
 		ContextHandler: ctxHandler,
 		Show:           resourcesShow,
 	}

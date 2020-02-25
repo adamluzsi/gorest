@@ -8,12 +8,12 @@ import (
 	"github.com/adamluzsi/gorest"
 )
 
-func ExampleController_Mount() {
-	resource := &gorest.Controller{
+func ExampleController_Handle() {
+	resource := &gorest.Handler{
 		ContextHandler: ContextHandlerForResource{},
 	}
 
-	subresource := &gorest.Controller{
+	subresource := &gorest.Handler{
 		ContextHandler: ContextHandlerForSubResource{},
 		Show: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			// have access to the top resource because the top resource handler set it for us
