@@ -538,6 +538,34 @@ func TestHandler_ServeHTTP(t *testing.T) {
 			andWhenCustomNotFoundHandlerProvided(s)
 		})
 	})
+
+	s.Describe(`CUSTOM /{resourceID} - unknown http method used`, func(s *testcase.Spec) {
+		s.Let(`method`, func(t *testcase.T) interface{} { return `CUSTOM` })
+		s.Let(`path`, func(t *testcase.T) interface{} { return fmt.Sprintf(`/%s`, resourceID(t)) })
+
+		s.When(`nothing set to handle the request`, func(s *testcase.Spec) {
+			s.Then(`it will return with 404`, func(t *testcase.T) {
+				require.Equal(t, http.StatusNotFound, serve(t).Code)
+			})
+
+			andWhenCustomNotFoundHandlerProvided(s)
+		})
+
+		s.When(`a global handler is set as fallback solution`, func(s *testcase.Spec) {
+			s.Before(func(t *testcase.T) {
+				handler(t).Handle(`/`, NewTestControllerMockHandler(t, http.StatusTeapot, http.StatusText(http.StatusTeapot)))
+			})
+
+			s.Then(`it will use the attached`, func(t *testcase.T) {
+				resp := serve(t)
+				require.Equal(t, http.StatusTeapot, resp.Code)
+				require.Equal(t, http.StatusText(http.StatusTeapot), strings.TrimSpace(resp.Body.String()))
+			})
+
+			andWhenResourceHandlerIs(s, func(s *testcase.Spec) {})
+		})
+	})
+
 }
 
 func NewTestControllerMockHandler(t *testcase.T, code int, msg string) TestControllerMockHandler {
