@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"math/rand"
 	"net/http"
 	"net/http/httptest"
@@ -566,28 +565,54 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		})
 	})
 
-}
+	s.Describe(`#InternalServerError`, func(s *testcase.Spec) {
+		const respBody = "a custom internal server error response"
+		s.Before(func(t *testcase.T) {
+			handler(t).InternalServerError = NewInternalServerErrorHandler(InternalServerErrorController{
+				Code: 500,
+				Msg:  respBody,
+			})
+		})
 
-func NewTestControllerMockHandler(t *testcase.T, code int, msg string) TestControllerMockHandler {
-	m := TestControllerMockHandler{T: t, Code: code, Msg: msg}
-	return m
-}
+		s.Let(`method`, func(t *testcase.T) interface{} { return http.MethodGet })
+		s.Let(`path`, func(t *testcase.T) interface{} { return fmt.Sprintf(`/%s`, resourceID(t)) })
 
-type TestControllerMockHandler struct {
-	T    *testcase.T
-	Code int
-	Msg  string
-}
+		s.When(`error occurs during context setup`, func(s *testcase.Spec) {
+			s.Before(func(t *testcase.T) {
+				handler(t).ContextHandler = ErrorContextHandler{Err: errors.New(`boom`)}
+			})
 
-func (m TestControllerMockHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	if m.T != nil {
-		m.T.Let(`request ctx`, r.Context())
-		bs, err := ioutil.ReadAll(r.Body)
-		require.Nil(m.T, err)
-		require.Equal(m.T, m.T.I(`body.content`).(string), string(bs))
-	}
+			s.Then(`custom internal server error handler will be used`, func(t *testcase.T) {
+				require.Contains(t, serve(t).Body.String(), respBody)
+			})
+		})
 
-	http.Error(w, m.Msg, m.Code)
+		s.When(`panic occurs during controller action`, func(s *testcase.Spec) {
+			s.Before(func(t *testcase.T) {
+				handler(t).Show = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					panic(`boom`)
+				})
+			})
+
+			s.Then(`custom internal server error handler will be used`, func(t *testcase.T) {
+				require.Contains(t, serve(t).Body.String(), respBody)
+			})
+
+			s.And(`internal server error also return with panic`, func(s *testcase.Spec) {
+				s.Before(func(t *testcase.T) {
+					handler(t).InternalServerError = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+						panic(`boom`)
+					})
+				})
+
+				s.Then(`generic internal server error is used as fallback`, func(t *testcase.T) {
+					resp := serve(t)
+					require.Equal(t, http.StatusInternalServerError, resp.Code)
+					require.Contains(t, resp.Body.String(), http.StatusText(http.StatusInternalServerError))
+				})
+			})
+		})
+	})
 }
 
 func BenchmarkController_ServeHTTP(b *testing.B) {

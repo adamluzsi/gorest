@@ -23,6 +23,11 @@ type Handler struct {
 }
 
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	defer func() {
+		if cause := recover(); cause != nil {
+			h.internalServerError(w, r)
+		}
+	}()
 	switch r.URL.Path {
 	case `/`, ``:
 		switch r.Method {
@@ -83,11 +88,21 @@ func (h *Handler) serve(handler http.Handler, w http.ResponseWriter, r *http.Req
 
 func (h *Handler) internalServerError(w http.ResponseWriter, r *http.Request) {
 	if h.InternalServerError == nil {
-		const code = http.StatusInternalServerError
-		http.Error(w, http.StatusText(code), code)
+		h.defaultInternalServerError(w, r)
 		return
 	}
+	defer func() {
+		if cause := recover(); cause != nil {
+			h.defaultInternalServerError(w, r)
+		}
+	}()
 	h.InternalServerError.ServeHTTP(w, r)
+}
+
+func (h *Handler) defaultInternalServerError(w http.ResponseWriter, r *http.Request) {
+	const code = http.StatusInternalServerError
+	http.Error(w, http.StatusText(code), code)
+	return
 }
 
 func (h *Handler) notFound(w http.ResponseWriter, r *http.Request) {
