@@ -29,7 +29,7 @@ func ExampleController() {
 
 type TeapotResourceHandler struct{}
 
-func (t TeapotResourceHandler) WithResource(ctx context.Context, teapotID string) (newCTX context.Context, found bool, err error) {
+func (t TeapotResourceHandler) ContextWithResource(ctx context.Context, teapotID string) (newCTX context.Context, found bool, err error) {
 	teapot, found, err := lookupTeapotByID(ctx, teapotID)
 	if err != nil {
 		// teapot lookup encountered an unexpected error

@@ -35,7 +35,7 @@ type Resource struct{ ID string }
 
 type ContextHandlerForResource struct{}
 
-func (ContextHandlerForResource) WithResource(ctx context.Context, resourceID string) (context.Context, bool, error) {
+func (ContextHandlerForResource) ContextWithResource(ctx context.Context, resourceID string) (context.Context, bool, error) {
 	// lookup Resource by id
 	// err out if lookup failed
 	// return false if not found
@@ -46,7 +46,7 @@ type SubResource struct{ ID string }
 
 type ContextHandlerForSubResource struct{}
 
-func (ContextHandlerForSubResource) WithResource(ctx context.Context, subResourceID string) (context.Context, bool, error) {
+func (ContextHandlerForSubResource) ContextWithResource(ctx context.Context, subResourceID string) (context.Context, bool, error) {
 	// lookup Resource by id
 	// err out if lookup failed
 	// return false if not found

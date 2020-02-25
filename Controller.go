@@ -102,7 +102,7 @@ func (ctrl *Controller) handleResourceID(ctx context.Context, resourceID string)
 	if ctrl.ContextHandler == nil {
 		return ctx, true, nil
 	}
-	return ctrl.ContextHandler.WithResource(ctx, resourceID)
+	return ctrl.ContextHandler.ContextWithResource(ctx, resourceID)
 }
 
 func (ctrl *Controller) getRoutes() *routes {

@@ -4,7 +4,7 @@ import "context"
 
 type DefaultContextHandler struct{ ContextKey interface{} }
 
-func (d DefaultContextHandler) WithResource(ctx context.Context, resourceID string) (context.Context, bool, error) {
+func (d DefaultContextHandler) ContextWithResource(ctx context.Context, resourceID string) (context.Context, bool, error) {
 	if resourceID == `` {
 		return ctx, false, nil
 	}
