@@ -48,4 +48,15 @@ func (d ExampleTestController) InternalServerError(w http.ResponseWriter, r *htt
 	_, _ = fmt.Fprintf(w, `internal-server-error`)
 }
 
-var _ gorest.ControllerWithErrorHandling = ExampleTestController{}
+var _ interface {
+	gorest.ListController
+	gorest.CreateController
+	
+	gorest.ContextHandler
+	gorest.ShowController
+	gorest.UpdateController
+	gorest.DeleteController
+
+	gorest.WithNotFoundHandler
+	gorest.WithInternalServerErrorHandler
+} = ExampleTestController{}
