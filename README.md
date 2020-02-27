@@ -1,3 +1,7 @@
+[![Build Status](https://travis-ci.org/adamluzsi/gorest.svg?branch=master)](https://travis-ci.org/adamluzsi/gorest)
+[![GoDoc](https://godoc.org/github.com/adamluzsi/gorest?status.png)](https://godoc.org/github.com/adamluzsi/gorest)
+[![Go Report Card](https://goreportcard.com/badge/github.com/adamluzsi/gorest)](https://goreportcard.com/report/github.com/adamluzsi/gorest)
+[![codecov](https://codecov.io/gh/adamluzsi/gorest/branch/master/graph/badge.svg)](https://codecov.io/gh/adamluzsi/gorest)
 # gorest
 
 gorest is a minimalist approach to build restful API designs through composition.
@@ -15,7 +19,7 @@ and store objects that represent `mystore` set in the context.
 After that, the same will happen with the `foods` resource `cucumber` id,
 but for this, I need the `mystore` instance as well from the context.
 
-This pattern worked nicely so far, as it allows guard clauses for handling cases 
+This pattern worked nicely so far, as it allows guard clauses for handling cases
 when a resource is not found or should not be returned to the requester.
 But it was also kinda boilerplate to setup this with `http.ServeMux`.
 
@@ -123,7 +127,7 @@ func (ctrl XYController) NotFound(w http.ResponseWriter, r *http.Request) {
 func (ctrl XYController) InternalServerError(w http.ResponseWriter, r *http.Request) {
 	_, _ = fmt.Fprintf(w, `internal-server-error`)
 }
-``` 
+```
 
 ### Using gorest.Handler directly
 
@@ -133,7 +137,7 @@ teapotController := &gorest.Controller{
     Show:           TeapotShowHandler{},
 }
 
-// GET /teapots/:teapotID/droplets/:dropletID -> SHOW 
+// GET /teapots/:teapotID/droplets/:dropletID -> SHOW
 teapotController.Mount(`droplets`, &gorest.Controller{
     ContextHandler: DropletResourceHandler{},
     Show:           DropletShowHandler{},
@@ -144,7 +148,7 @@ gorest.Mount(mux, `/teapots`, teapotController)
 ```
 
 ## Q&A
- 
+
 ### And what to do when I need an Endpoints that is outside of the restful path convention?
 
 You can use [Handle](https://godoc.org/github.com/adamluzsi/gorest#Controller.Handle) to mount a `http.Handler` to any `http.ServeMux` supported pattern,
@@ -154,6 +158,6 @@ You can use [Handle](https://godoc.org/github.com/adamluzsi/gorest#Controller.Ha
 I usually use BDD approach and setup the testing context,
 so I don't have to care too much about implementation details from that perspective,
 but if you need to mock, the `ContextHandler` can help a lot, as you can test the implementation separately,
-and supply a mock for the controller action tests. 
+and supply a mock for the controller action tests.
 
 IMO, and E2E test with context setup is less of a risk, but that is just a matter of testing taste.
