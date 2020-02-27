@@ -22,7 +22,7 @@ func TestNewHandler(t *testing.T) {
 		return w
 	}
 
-	s.Let(`controller`, func(t *testcase.T) interface{} { return ExampleTestController{} })
+	s.Let(`controller`, func(t *testcase.T) interface{} { return TestController{} })
 
 	s.Describe(`#List`, func(s *testcase.Spec) {
 		s.Let(`method`, func(t *testcase.T) interface{} { return http.MethodGet })
