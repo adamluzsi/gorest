@@ -8,7 +8,7 @@ import (
 	"github.com/adamluzsi/gorest"
 )
 
-func ExampleUnshiftPathParam() {
+func ExampleUnshiftPathParamFromRequest() {
 	var withResourceID = func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			r, param := gorest.UnshiftPathParamFromRequest(r)

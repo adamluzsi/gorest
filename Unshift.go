@@ -7,9 +7,18 @@ import (
 )
 
 func UnshiftPathParamFromRequest(r *http.Request) (*http.Request, string) {
+	id, path := Unshift(r.URL.Path)
+	r2 := new(http.Request)
+	*r2 = *r // copy
+	r2.URL = new(url.URL)
+	*r2.URL = *r.URL
+	r2.URL.Path = path
+	return r2, id
+}
+
+func Unshift(path string) (id string, remainingPath string) {
 	const separator = `/`
 
-	path := r.URL.Path
 	isRootPath := strings.HasPrefix(path, separator)
 	path = strings.TrimFunc(path, func(r rune) bool { return r == '/' })
 	parts := strings.Split(path, separator)
@@ -20,10 +29,5 @@ func UnshiftPathParamFromRequest(r *http.Request) (*http.Request, string) {
 		newPath = `/` + newPath
 	}
 
-	r2 := new(http.Request)
-	*r2 = *r // copy
-	r2.URL = new(url.URL)
-	*r2.URL = *r.URL
-	r2.URL.Path = newPath
-	return r2, param
+	return param, newPath
 }
