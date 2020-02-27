@@ -8,7 +8,7 @@ import (
 	"github.com/adamluzsi/gorest"
 )
 
-func ExampleHandler_Mount() {
+func ExampleMount() {
 	subresource := &gorest.Handler{
 		ContextHandler: ContextHandlerForSubResource{},
 		Show: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -25,7 +25,7 @@ func ExampleHandler_Mount() {
 		ContextHandler: ContextHandlerForResource{},
 	}
 
-	gorest.Mount(resource, `/subresources/`, subresource)
+	gorest.Mount(resource, `/subresources`, subresource)
 
 	mux := http.NewServeMux()
 
