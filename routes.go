@@ -29,6 +29,7 @@ func (m *routes) Handle(pattern string, handler http.Handler) {
 		name := m.name(pattern)
 		m.hasResource[name] = struct{}{}
 	}
+
 	m.mux.Handle(pattern, handler)
 }
 
@@ -47,5 +48,6 @@ func (m *routes) name(path string) string {
 			return part
 		}
 	}
+
 	return ``
 }

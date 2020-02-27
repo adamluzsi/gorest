@@ -13,9 +13,9 @@ func ExampleMount() {
 		ContextHandler: ContextHandlerForSubResource{},
 		Show: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			// have access to the top resource because the top resource handler set it for us
-			res := r.Context().Value(`resource`).(Resource)
+			res := r.Context().Value(ContextResourceKey{}).(Resource)
 			// have access to the sub resource because the sub resource handler set it for us
-			subres := r.Context().Value(`subresource`).(SubResource)
+			subres := r.Context().Value(ContextSubResourceKey{}).(SubResource)
 			// print it, because why not
 			fmt.Fprintf(w, `resource: %v | subresource: %v`, res, subres)
 		}),
@@ -42,21 +42,24 @@ func ExampleMount() {
 type Resource struct{ ID string }
 
 type ContextHandlerForResource struct{}
+type ContextResourceKey struct{}
 
 func (ContextHandlerForResource) ContextWithResource(ctx context.Context, resourceID string) (context.Context, bool, error) {
 	// lookup Resource by id
 	// err out if lookup failed
 	// return false if not found
-	return context.WithValue(ctx, `resource`, Resource{ID: resourceID}), true, nil
+	return context.WithValue(ctx, ContextResourceKey{}, Resource{ID: resourceID}), true, nil
 }
 
 type SubResource struct{ ID string }
 
 type ContextHandlerForSubResource struct{}
 
+type ContextSubResourceKey struct{}
+
 func (ContextHandlerForSubResource) ContextWithResource(ctx context.Context, subResourceID string) (context.Context, bool, error) {
 	// lookup Resource by id
 	// err out if lookup failed
 	// return false if not found
-	return context.WithValue(ctx, `subresource`, SubResource{ID: subResourceID}), true, nil
+	return context.WithValue(ctx, ContextSubResourceKey{}, SubResource{ID: subResourceID}), true, nil
 }

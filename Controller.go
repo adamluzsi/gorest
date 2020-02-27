@@ -11,6 +11,12 @@ type Controller interface {
 	DeleteController
 }
 
+type ListController interface {
+	// List -- GET /
+	// List is the endpoint that responsible to list available resources to the requester.
+	List(w http.ResponseWriter, r *http.Request)
+}
+
 type CreateController interface {
 	// Create -- POST /
 	// Create is the endpoint that responsible to create a new resource.
@@ -33,12 +39,6 @@ type DeleteController interface {
 	// Delete -- DELETE /{resourceID}
 	// Delete is expected to make the resource unavailable one way or an another.
 	Delete(w http.ResponseWriter, r *http.Request)
-}
-
-type ListController interface {
-	// List -- GET /
-	// List is the endpoint that responsible to list available resources to the requester.
-	List(w http.ResponseWriter, r *http.Request)
 }
 
 type WithNotFoundHandler interface {

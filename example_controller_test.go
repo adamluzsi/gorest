@@ -16,8 +16,10 @@ func ExampleController_listenAndServe() {
 
 type TestController struct{}
 
+type ContextTestIDKey struct{}
+
 func (d TestController) ContextWithResource(ctx context.Context, resourceID string) (newContext context.Context, found bool, err error) {
-	return context.WithValue(ctx, `id`, resourceID), true, nil
+	return context.WithValue(ctx, ContextTestIDKey{}, resourceID), true, nil
 }
 
 func (d TestController) Create(w http.ResponseWriter, r *http.Request) {
@@ -29,15 +31,15 @@ func (d TestController) List(w http.ResponseWriter, r *http.Request) {
 }
 
 func (d TestController) Show(w http.ResponseWriter, r *http.Request) {
-	_, _ = fmt.Fprintf(w, `show:%s`, r.Context().Value(`id`))
+	_, _ = fmt.Fprintf(w, `show:%s`, r.Context().Value(ContextTestIDKey{}))
 }
 
 func (d TestController) Update(w http.ResponseWriter, r *http.Request) {
-	_, _ = fmt.Fprintf(w, `update:%s`, r.Context().Value(`id`))
+	_, _ = fmt.Fprintf(w, `update:%s`, r.Context().Value(ContextTestIDKey{}))
 }
 
 func (d TestController) Delete(w http.ResponseWriter, r *http.Request) {
-	_, _ = fmt.Fprintf(w, `delete:%s`, r.Context().Value(`id`))
+	_, _ = fmt.Fprintf(w, `delete:%s`, r.Context().Value(ContextTestIDKey{}))
 }
 
 func (d TestController) NotFound(w http.ResponseWriter, r *http.Request) {
@@ -51,7 +53,7 @@ func (d TestController) InternalServerError(w http.ResponseWriter, r *http.Reque
 var _ interface {
 	gorest.ListController
 	gorest.CreateController
-	
+
 	gorest.ContextHandler
 	gorest.ShowController
 	gorest.UpdateController

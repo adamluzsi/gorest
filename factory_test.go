@@ -85,7 +85,7 @@ func TestNewHandler(t *testing.T) {
 				ErrorContextHandler
 			}{
 				InternalServerErrorController: InternalServerErrorController{
-					Code: 500,
+					Code: http.StatusInternalServerError,
 					Msg:  "custom-internal-server-error",
 				},
 				ErrorContextHandler: ErrorContextHandler{Err: errors.New(`boom`)},
@@ -98,5 +98,4 @@ func TestNewHandler(t *testing.T) {
 			require.Contains(t, request(t).Body.String(), `custom-internal-server-error`)
 		})
 	})
-
 }

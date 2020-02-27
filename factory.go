@@ -2,6 +2,7 @@ package gorest
 
 import "net/http"
 
+// NewHandler builds a new *Handler instance and try to setup the handler parameters with the passed controller.
 func NewHandler(ctrl interface{}) *Handler {
 	h := &Handler{}
 	if i, ok := ctrl.(ContextHandler); ok {

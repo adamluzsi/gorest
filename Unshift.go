@@ -25,6 +25,7 @@ func Unshift(path string) (id string, remainingPath string) {
 
 	param := parts[0]
 	newPath := strings.Join(parts[1:], separator)
+
 	if isRootPath {
 		newPath = `/` + newPath
 	}

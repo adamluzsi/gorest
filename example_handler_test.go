@@ -24,10 +24,11 @@ func ExampleHandler() {
 	// OR do the same, but with this function.
 	// I often forget to mount my controller also to the path without slash suffix.
 	gorest.Mount(mux, `/teapots`, &gorest.Handler{Show: TeapotShowAction{}})
-
 }
 
 type TeapotResourceHandler struct{}
+
+type ContextTeapotKey struct{}
 
 func (t TeapotResourceHandler) ContextWithResource(ctx context.Context, teapotID string) (newCTX context.Context, found bool, err error) {
 	teapot, found, err := lookupTeapotByID(ctx, teapotID)
@@ -40,13 +41,13 @@ func (t TeapotResourceHandler) ContextWithResource(ctx context.Context, teapotID
 		return ctx, false, nil
 	}
 	// set teapot object in context so handlers can access the Resource easily
-	return context.WithValue(ctx, `teapot`, teapot), true, nil
+	return context.WithValue(ctx, ContextTeapotKey{}, teapot), true, nil
 }
 
 type TeapotShowAction struct{}
 
 func (e TeapotShowAction) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	teapot := r.Context().Value(`teapot`).(Teapot)
+	teapot := r.Context().Value(ContextTeapotKey{}).(Teapot)
 	_, _ = fmt.Fprintf(w, `my teapot resource: %v`, teapot)
 }
 

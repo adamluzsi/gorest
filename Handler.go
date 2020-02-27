@@ -26,6 +26,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			h.internalServerError(w, r)
 		}
 	}()
+
 	switch r.URL.Path {
 	case `/`, ``:
 		switch r.Method {
@@ -34,17 +35,17 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 		case http.MethodPost:
 			h.serve(h.Create, w, r)
-
 		}
 	default: // dynamic path
 		ctx := r.Context()
-
 		r, resourceID := UnshiftPathParamFromRequest(r)
-		ctx, found, err := h.handleResourceID(r.Context(), resourceID)
+		ctx, found, err := h.handleResourceID(ctx, resourceID)
+
 		if err != nil {
 			h.internalServerError(w, r)
 			return
 		}
+
 		if !found {
 			h.notFound(w, r)
 			return
@@ -89,6 +90,7 @@ func (h *Handler) internalServerError(w http.ResponseWriter, r *http.Request) {
 		h.defaultInternalServerError(w, r)
 		return
 	}
+
 	defer func() {
 		if cause := recover(); cause != nil {
 			h.defaultInternalServerError(w, r)
@@ -97,10 +99,9 @@ func (h *Handler) internalServerError(w http.ResponseWriter, r *http.Request) {
 	h.InternalServerError.ServeHTTP(w, r)
 }
 
-func (h *Handler) defaultInternalServerError(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) defaultInternalServerError(w http.ResponseWriter, _ *http.Request) {
 	const code = http.StatusInternalServerError
 	http.Error(w, http.StatusText(code), code)
-	return
 }
 
 func (h *Handler) notFound(w http.ResponseWriter, r *http.Request) {
@@ -108,6 +109,7 @@ func (h *Handler) notFound(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
+
 	h.NotFound.ServeHTTP(w, r)
 }
 
@@ -115,6 +117,7 @@ func (h *Handler) handleResourceID(ctx context.Context, resourceID string) (cont
 	if h.ContextHandler == nil {
 		return ctx, true, nil
 	}
+
 	return h.ContextHandler.ContextWithResource(ctx, resourceID)
 }
 
@@ -122,6 +125,7 @@ func (h *Handler) getRoutes() *routes {
 	if h.routes == nil {
 		h.routes = newRoutes()
 	}
+
 	return h.routes
 }
 

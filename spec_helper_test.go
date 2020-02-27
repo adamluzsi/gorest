@@ -42,7 +42,9 @@ func (h InternalServerErrorController) InternalServerError(w http.ResponseWriter
 	_, _ = fmt.Fprintf(w, h.Msg)
 }
 
-func NewInternalServerErrorHandler(ctrl interface{ InternalServerError(w http.ResponseWriter, r *http.Request) }) http.Handler {
+func NewInternalServerErrorHandler(ctrl interface {
+	InternalServerError(w http.ResponseWriter, r *http.Request)
+}) http.Handler {
 	return http.HandlerFunc(ctrl.InternalServerError)
 }
 
@@ -63,4 +65,3 @@ func (ctrl ErrorContextHandler) Show(w http.ResponseWriter, r *http.Request) {}
 func (ctrl ErrorContextHandler) Update(w http.ResponseWriter, r *http.Request) {}
 
 func (ctrl ErrorContextHandler) Delete(w http.ResponseWriter, r *http.Request) {}
-

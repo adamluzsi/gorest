@@ -228,9 +228,8 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		s.Let(`method`, func(t *testcase.T) interface{} {
 			if rand.Intn(1) == 0 {
 				return http.MethodPut
-			} else {
-				return http.MethodPatch
 			}
+			return http.MethodPatch
 		})
 		s.Let(`path`, func(t *testcase.T) interface{} { return fmt.Sprintf(`/%s`, resourceID(t)) })
 
@@ -562,7 +561,7 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		const respBody = "a custom internal server error response"
 		s.Before(func(t *testcase.T) {
 			handler(t).InternalServerError = NewInternalServerErrorHandler(InternalServerErrorController{
-				Code: 500,
+				Code: http.StatusInternalServerError,
 				Msg:  respBody,
 			})
 		})

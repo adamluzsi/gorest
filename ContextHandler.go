@@ -2,6 +2,7 @@ package gorest
 
 import "context"
 
+// ContextHandler responsible to setup the request context with the requested resource based on the resource id.
 type ContextHandler interface {
 	// ContextWithResource responsible to validate the received resource id, and confirm if the requester is authorized to access it.
 	// In case everything align, it should store the resource object that was fetched from some sort of external resource into the context.
