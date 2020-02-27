@@ -2,9 +2,7 @@ package gorest
 
 import (
 	"context"
-	"errors"
 	"net/http"
-	"strings"
 )
 
 type Handler struct {
@@ -125,18 +123,6 @@ func (h *Handler) getRoutes() *routes {
 		h.routes = newRoutes()
 	}
 	return h.routes
-}
-
-func (h *Handler) Mount(name string, handler *Handler) error {
-	if strings.Contains(name, `/`) {
-		return errors.New(`resource should not include "/"`)
-	}
-	var (
-		path    = `/` + name
-		pattern = path + `/`
-	)
-	Mount(h.getRoutes(), pattern, handler)
-	return nil
 }
 
 func (h *Handler) Handle(pattern string, handler http.Handler) {

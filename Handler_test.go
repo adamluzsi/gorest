@@ -290,7 +290,7 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		})
 	})
 
-	s.Describe(`#Mount`, func(s *testcase.Spec) {
+	s.Describe(`with Mount`, func(s *testcase.Spec) {
 		s.Before(func(t *testcase.T) {
 			t.Log(`given the top level controller has all the action`)
 			handler(t).Create = NewTestControllerMockHandler(t, http.StatusForbidden, `FORBIDDEN`)
@@ -300,7 +300,7 @@ func TestHandler_ServeHTTP(t *testing.T) {
 			handler(t).Delete = NewTestControllerMockHandler(t, http.StatusForbidden, `FORBIDDEN`)
 			t.Log(`but none of those actions should be called`)
 		})
-		s.When(`valid sub controller successfuly mounted`, func(s *testcase.Spec) {
+		s.When(`valid sub controller successfully mounted`, func(s *testcase.Spec) {
 			s.Let(`sub-handler`, func(t *testcase.T) interface{} {
 				return &gorest.Handler{
 					ContextHandler: gorest.DefaultContextHandler{ContextKey: `sub-id`},
@@ -311,7 +311,7 @@ func TestHandler_ServeHTTP(t *testing.T) {
 					Delete:         NewTestControllerMockHandler(t, http.StatusOK, `Delete`),
 				}
 			})
-			s.Before(func(t *testcase.T) { require.Nil(t, handler(t).Mount(`subs`, t.I(`sub-handler`).(*gorest.Handler))) })
+			s.Before(func(t *testcase.T) { gorest.Mount(handler(t), `/subs/`, t.I(`sub-handler`).(*gorest.Handler)) })
 
 			var thenActionWillReply = func(s *testcase.Spec, expectedCode int, expectedMessage string) {
 				s.Then(`action will reply`, func(t *testcase.T) {
@@ -352,22 +352,15 @@ func TestHandler_ServeHTTP(t *testing.T) {
 			})
 		})
 
-		s.When(`invalid resource name is provided`, func(s *testcase.Spec) {
-			s.Then(`it will yield an error`, func(t *testcase.T) {
-				require.Error(t, (&gorest.Handler{}).Mount(`/books/`, &gorest.Handler{}),
-					`path is not accepted as resource identifier`)
-			})
-		})
-
 		s.Test(`E2E`, func(t *testcase.T) {
-			h := gorest.Handler{}
+			h := &gorest.Handler{}
 
 			ch := gorest.DefaultContextHandler{ContextKey: `bookID`}
 			booksShow := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				_, _ = fmt.Fprintf(w, `%s`, ch.GetResourceID(r.Context()))
 			})
 
-			require.Nil(t, h.Mount(`books`, &gorest.Handler{ContextHandler: ch, Show: booksShow}))
+			gorest.Mount(h, `/books/`, &gorest.Handler{ContextHandler: ch, Show: booksShow})
 
 			w := httptest.NewRecorder()
 			r := httptest.NewRequest(http.MethodGet, `/:topResourceID/books/42`, &bytes.Buffer{})
