@@ -35,6 +35,10 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 		case http.MethodPost:
 			h.serve(h.Create, w, r)
+
+		default:
+			h.serve(nil, w, r)
+
 		}
 	default: // dynamic path
 		ctx := r.Context()
