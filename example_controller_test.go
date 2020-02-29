@@ -2,63 +2,34 @@ package gorest_test
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 
 	"github.com/adamluzsi/gorest"
 )
 
-func ExampleController_listenAndServe() {
-	if err := http.ListenAndServe(`:8080`, gorest.NewHandler(TestController{})); err != nil {
-		panic(err.Error())
-	}
+func ExampleController_creatingHandlerFromController() {
+	NewMyHandler()
 }
 
-type TestController struct{}
-
-type ContextTestIDKey struct{}
-
-func (d TestController) ContextWithResource(ctx context.Context, resourceID string) (newContext context.Context, found bool, err error) {
-	return context.WithValue(ctx, ContextTestIDKey{}, resourceID), true, nil
+func NewMyHandler() http.Handler {
+	return gorest.NewHandler(MyController{})
 }
 
-func (d TestController) Create(w http.ResponseWriter, r *http.Request) {
-	_, _ = fmt.Fprintf(w, `create`)
+type MyController struct{}
+
+func (ctrl MyController) List(w http.ResponseWriter, r *http.Request) {}
+
+func (ctrl MyController) Create(w http.ResponseWriter, r *http.Request) {}
+
+type ContextKeyMyResource struct{}
+
+func (ctrl MyController) ContextWithResource(ctx context.Context, resourceID string) (context.Context, bool, error) {
+	var resource interface{} // fetch resource by id
+	return context.WithValue(ctx, ContextKeyMyResource{}, resource), true, nil
 }
 
-func (d TestController) List(w http.ResponseWriter, r *http.Request) {
-	_, _ = fmt.Fprintf(w, `list`)
-}
+func (ctrl MyController) Show(w http.ResponseWriter, r *http.Request) {}
 
-func (d TestController) Show(w http.ResponseWriter, r *http.Request) {
-	_, _ = fmt.Fprintf(w, `show:%s`, r.Context().Value(ContextTestIDKey{}))
-}
+func (ctrl MyController) Update(w http.ResponseWriter, r *http.Request) {}
 
-func (d TestController) Update(w http.ResponseWriter, r *http.Request) {
-	_, _ = fmt.Fprintf(w, `update:%s`, r.Context().Value(ContextTestIDKey{}))
-}
-
-func (d TestController) Delete(w http.ResponseWriter, r *http.Request) {
-	_, _ = fmt.Fprintf(w, `delete:%s`, r.Context().Value(ContextTestIDKey{}))
-}
-
-func (d TestController) NotFound(w http.ResponseWriter, r *http.Request) {
-	_, _ = fmt.Fprintf(w, `not-found`)
-}
-
-func (d TestController) InternalServerError(w http.ResponseWriter, r *http.Request) {
-	_, _ = fmt.Fprintf(w, `internal-server-error`)
-}
-
-var _ interface {
-	gorest.ListController
-	gorest.CreateController
-
-	gorest.ContextHandler
-	gorest.ShowController
-	gorest.UpdateController
-	gorest.DeleteController
-
-	gorest.WithNotFoundHandler
-	gorest.WithInternalServerErrorHandler
-} = TestController{}
+func (ctrl MyController) Delete(w http.ResponseWriter, r *http.Request) {}

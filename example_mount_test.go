@@ -17,7 +17,7 @@ func ExampleMount() {
 			// have access to the sub resource because the sub resource handler set it for us
 			subres := r.Context().Value(ContextSubResourceKey{}).(SubResource)
 			// print it, because why not
-			fmt.Fprintf(w, `resource: %v | subresource: %v`, res, subres)
+			_, _ = fmt.Fprintf(w, `resource: %v | subresource: %v`, res, subres)
 		}),
 	}
 

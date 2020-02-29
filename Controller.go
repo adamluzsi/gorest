@@ -19,13 +19,13 @@ type ListController interface {
 
 type CreateController interface {
 	// Create -- POST /
-	// Create is the endpoint that responsible to create a new resource.
+	// Create is expected to add a new element to the given collection.
 	Create(w http.ResponseWriter, r *http.Request)
 }
 
 type ShowController interface {
 	// Show -- GET /{resourceID}
-	// Show expected to represent a requested resource by resource ID
+	// Show expected to retrieve a specific resource from a collection by ID
 	Show(w http.ResponseWriter, r *http.Request)
 }
 

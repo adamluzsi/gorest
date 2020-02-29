@@ -1,0 +1,45 @@
+Consistency is the key
+Use consistent resource naming conventions and URI formatting for minimum ambiguily and maximum readability and maintainability. You may implement below design hints to achieve consistency:
+
+Use forward slash (/) to indicate hierarchical relationships
+The forward slash (/) character is used in the path portion of the URI to indicate a hierarchical relationship between resources. e.g.
+
+http://api.example.com/device-management
+http://api.example.com/device-management/managed-devices
+http://api.example.com/device-management/managed-devices/{id}
+http://api.example.com/device-management/managed-devices/{id}/scripts
+http://api.example.com/device-management/managed-devices/{id}/scripts/{id}
+Do not use trailing forward slash (/) in URIs
+As the last character within a URI’s path, a forward slash (/) adds no semantic value and may cause confusion. It’s better to drop them completely.
+
+http://api.example.com/device-management/managed-devices/
+http://api.example.com/device-management/managed-devices 	/*This is much better version*/
+Use hyphens (-) to improve the readability of URIs
+To make your URIs easy for people to scan and interpret, use the hyphen (-) character to improve the readability of names in long path segments.
+
+http://api.example.com/inventory-management/managed-entities/{id}/install-script-location  //More readable
+http://api.example.com/inventory-management/managedEntities/{id}/installScriptLocation  //Less readable
+Do not use underscores ( _ )
+It’s possible to use an underscore in place of a hyphen to be used as separator – But depending on the application’s font, it’s possible that the underscore (_) character can either get partially obscured or completely hidden in some browsers or screens.
+
+To avoid this confusion, use hyphens (-) instead of underscores ( _ ).
+
+http://api.example.com/inventory-management/managed-entities/{id}/install-script-location  //More readable
+http://api.example.com/inventory_management/managed_entities/{id}/install_script_location  //More error prone
+Use lowercase letters in URIs
+When convenient, lowercase letters should be consistently preferred in URI paths.
+
+RFC 3986 defines URIs as case-sensitive except for the scheme and host components. e.g.
+
+http://api.example.org/my-folder/my-doc  //1
+HTTP://API.EXAMPLE.ORG/my-folder/my-doc  //2
+http://api.example.org/My-Folder/my-doc  //3
+In above examples, 1 and 2 are same but 3 is not as it uses My-Folder in capital letters.
+
+Do not use file extentions
+File extensions look bad and do not add any advantage. Removing them decreases the length of URIs as well. No reason to keep them.
+
+Apart from above reason, if you want to highlight the media type of API using file extenstion then you should rely on the media type, as communicated through the Content-Type header, to determine how to process the body’s content.
+
+http://api.example.com/device-management/managed-devices.xml  /*Do not use it*/
+http://api.example.com/device-management/managed-devices 	/*This is correct URI*/

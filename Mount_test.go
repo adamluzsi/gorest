@@ -15,8 +15,13 @@ import (
 
 var (
 	_ gorest.Multiplexer = http.NewServeMux()
-	_ gorest.Multiplexer = gorest.NewHandler(nil)
+	_ gorest.Multiplexer = &gorest.Handler{}
 )
+
+type mux interface {
+	gorest.Multiplexer
+	http.Handler
+}
 
 func TestMount(t *testing.T) {
 	s := testcase.NewSpec(t)
@@ -29,7 +34,7 @@ func TestMount(t *testing.T) {
 		)
 	}
 
-	var multiplexer = func(t *testcase.T) gorest.Multiplexer { return t.I(`multiplexer`).(gorest.Multiplexer) }
+	var multiplexer = func(t *testcase.T) mux { return t.I(`multiplexer`).(*http.ServeMux) }
 	s.Let(`multiplexer`, func(t *testcase.T) interface{} { return http.NewServeMux() })
 	s.Let(`handler`, func(t *testcase.T) interface{} { return gorest.NewHandler(TestController{}) })
 
