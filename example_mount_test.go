@@ -9,57 +9,50 @@ import (
 )
 
 func ExampleMount() {
-	subresource := &gorest.Handler{
-		ContextHandler: ContextHandlerForSubResource{},
-		Show: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			// have access to the top resource because the top resource handler set it for us
-			res := r.Context().Value(ContextResourceKey{}).(Resource)
-			// have access to the sub resource because the sub resource handler set it for us
-			subres := r.Context().Value(ContextSubResourceKey{}).(SubResource)
-			// print it, because why not
-			_, _ = fmt.Fprintf(w, `resource: %v | subresource: %v`, res, subres)
-		}),
-	}
 
-	resource := &gorest.Handler{
-		ContextHandler: ContextHandlerForResource{},
-	}
-
-	gorest.Mount(resource, `/subresources`, subresource)
+	subResourceHandler := gorest.NewHandler(SubResourceController{})
+	resourceHandler := gorest.NewHandler(ResourceController{})
 
 	mux := http.NewServeMux()
+	gorest.Mount(resourceHandler, `/sub-resources`, subResourceHandler)
+	gorest.Mount(mux, `/resources`, resourceHandler)
 
-	// this will cause http.ServeMux to have endpoints like:
-	//	GET /resources
-	//	POST /resources
-	//	GET /resources/{resourceID}
-	//	GET /resources/{resourceID}/subresources
-	//	GET /resources/{resourceID}/subresources/{subresourceID}
-	// and so on
-	gorest.Mount(mux, `/resources`, resource)
+	// this will cause http.ServeMux to have handlers by the controller structures in hierarchy:
+	//	GET /resources/{resourceID}/sub-resources/{sub-resourceID}
 }
 
-type Resource struct{ ID string }
+type ResourceController struct{}
 
-type ContextHandlerForResource struct{}
-type ContextResourceKey struct{}
+type ContextKeyResource struct{}
 
-func (ContextHandlerForResource) ContextWithResource(ctx context.Context, resourceID string) (context.Context, bool, error) {
+func (ctrl ResourceController) ContextWithResource(ctx context.Context, resourceID string) (newContext context.Context, found bool, err error) {
 	// lookup Resource by id
 	// err out if lookup failed
 	// return false if not found
-	return context.WithValue(ctx, ContextResourceKey{}, Resource{ID: resourceID}), true, nil
+	return context.WithValue(ctx, ContextKeyResource{}, Resource{ID: resourceID}), true, nil
 }
 
-type SubResource struct{ ID string }
+type SubResourceController struct{}
 
-type ContextHandlerForSubResource struct{}
+type ContextKeySubResource struct{}
 
-type ContextSubResourceKey struct{}
-
-func (ContextHandlerForSubResource) ContextWithResource(ctx context.Context, subResourceID string) (context.Context, bool, error) {
+func (ctrl SubResourceController) ContextWithResource(ctx context.Context, subResourceID string) (context.Context, bool, error) {
 	// lookup Resource by id
 	// err out if lookup failed
 	// return false if not found
-	return context.WithValue(ctx, ContextSubResourceKey{}, SubResource{ID: subResourceID}), true, nil
+	return context.WithValue(ctx, ContextKeySubResource{}, SubResource{ID: subResourceID}), true, nil
 }
+
+func (ctrl SubResourceController) Show(w http.ResponseWriter, r *http.Request) {
+	// have access to the top resource because the top resource handler set it for us
+	res := r.Context().Value(ContextKeyResource{}).(Resource)
+	// have access to the sub resource because the sub resource handler set it for us
+	subres := r.Context().Value(ContextKeySubResource{}).(SubResource)
+	// print it, because why not
+	_, _ = fmt.Fprintf(w, `resource: %v | subresource: %v`, res, subres)
+}
+
+type (
+	Resource    struct{ ID string }
+	SubResource struct{ ID string }
+)

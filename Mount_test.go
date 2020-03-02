@@ -93,15 +93,16 @@ func TestMount(t *testing.T) {
 	s.Test(`E2E`, func(t *testcase.T) {
 		ctxHandler := gorest.DefaultContextHandler{ContextKey: `resourceID`}
 
-		resourcesShow := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			_, _ = fmt.Fprintf(w, `%s`, ctxHandler.GetResourceID(r.Context()))
-		})
-
-		resources := &gorest.Handler{
+		resources := gorest.NewHandler(struct {
+			gorest.ContextHandler
+			ShowController
+		}{
 			ContextHandler: ctxHandler,
-			Show:           resourcesShow,
-		}
-
+			ShowController: ShowController{Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				_, _ = fmt.Fprintf(w, `%s`, ctxHandler.GetResourceID(r.Context()))
+			})},
+		})
+		
 		mux := http.NewServeMux()
 		gorest.Mount(mux, `/routes`, resources)
 

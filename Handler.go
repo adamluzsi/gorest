@@ -3,21 +3,22 @@ package gorest
 import (
 	"context"
 	"net/http"
+	"strings"
 )
 
 type Handler struct {
-	ContextHandler ContextHandler
-
-	Create http.Handler
-	List   http.Handler
-	Show   http.Handler
-	Update http.Handler
-	Delete http.Handler
-
+	ContextHandler      ContextHandler
 	NotFound            http.Handler
 	InternalServerError http.Handler
-
-	routes *routes
+	operations          struct {
+		collection map[string]http.Handler
+		resource   map[string]http.Handler
+	}
+	handlers struct {
+		*http.ServeMux
+		prefixes       map[string]struct{}
+		hasRootHandler bool
+	}
 }
 
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -27,19 +28,18 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 
+	var method = r.Method
+
 	switch r.URL.Path {
 	case `/`, ``:
-		switch r.Method {
-		case http.MethodGet:
-			h.serve(h.List, w, r)
-
-		case http.MethodPost:
-			h.serve(h.Create, w, r)
-
-		default:
-			h.serve(nil, w, r)
-
+		ch, ok := h.LookupCollectionHandler(method, r.URL.Path)
+		if !ok {
+			h.notFound(w, r)
+			return
 		}
+
+		ch.ServeHTTP(w, r)
+
 	default: // dynamic path
 		ctx := r.Context()
 		r, resourceID := UnshiftPathParamFromRequest(r)
@@ -57,36 +57,79 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 		r = r.WithContext(ctx)
 
-		if h.routes != nil && h.routes.HasResource(r.URL.Path) {
-			h.routes.ServeHTTP(w, r)
+		rh, ok := h.LookupResourceHandler(method, r.URL.Path)
+		if !ok {
+			h.notFound(w, r)
 			return
 		}
 
-		switch r.Method {
-		case http.MethodGet:
-			h.serve(h.Show, w, r)
-		case http.MethodPut, http.MethodPatch:
-			h.serve(h.Update, w, r)
-		case http.MethodDelete:
-			h.serve(h.Delete, w, r)
-		default:
-			h.serve(nil, w, r)
-		}
+		rh.ServeHTTP(w, r)
 	}
 }
 
-func (h *Handler) serve(handler http.Handler, w http.ResponseWriter, r *http.Request) {
-	if handler != nil {
-		handler.ServeHTTP(w, r)
-		return
+func (h *Handler) Handle(pattern string, handler http.Handler) {
+	if pattern == `/` {
+		h.handlers.hasRootHandler = true
+	} else {
+		if h.handlers.prefixes == nil {
+			h.handlers.prefixes = make(map[string]struct{})
+		}
+		h.handlers.prefixes[h.prefix(pattern)] = struct{}{}
 	}
 
-	if h.routes != nil && h.routes.HasRoot() {
-		h.routes.ServeHTTP(w, r)
-		return
+	if h.handlers.ServeMux == nil {
+		h.handlers.ServeMux = http.NewServeMux()
 	}
+	h.handlers.ServeMux.Handle(pattern, handler)
+}
 
-	h.notFound(w, r)
+func (h *Handler) LookupCollectionHandler(method, _ string) (http.Handler, bool) {
+	var (
+		handler http.Handler
+		ok      bool
+	)
+	if h.operations.collection == nil {
+		handler, ok = nil, false
+	} else {
+		handler, ok = h.operations.collection[method]
+	}
+	if !ok && h.hasRootHandler() {
+		return h.handlers, true
+	}
+	return handler, ok
+}
+
+func (h *Handler) LookupResourceHandler(method, path string) (http.Handler, bool) {
+	if h.hasHandlerWithPrefixThatMatch(path) {
+		return h.handlers, true
+	}
+	var (
+		handler http.Handler
+		ok      bool
+	)
+	if h.operations.resource == nil {
+		handler, ok = nil, false
+	} else {
+		handler, ok = h.operations.resource[method]
+	}
+	if !ok && h.hasRootHandler() {
+		return h.handlers, true
+	}
+	return handler, ok
+}
+
+func (h *Handler) setCollectionHandler(httpMethod string, handler http.Handler) {
+	if h.operations.collection == nil {
+		h.operations.collection = make(map[string]http.Handler)
+	}
+	h.operations.collection[httpMethod] = handler
+}
+
+func (h *Handler) setResourceHandler(httpMethod string, handler http.Handler) {
+	if h.operations.resource == nil {
+		h.operations.resource = make(map[string]http.Handler)
+	}
+	h.operations.resource[httpMethod] = handler
 }
 
 func (h *Handler) internalServerError(w http.ResponseWriter, r *http.Request) {
@@ -125,14 +168,25 @@ func (h *Handler) handleResourceID(ctx context.Context, resourceID string) (cont
 	return h.ContextHandler.ContextWithResource(ctx, resourceID)
 }
 
-func (h *Handler) getRoutes() *routes {
-	if h.routes == nil {
-		h.routes = newRoutes()
+func (h *Handler) hasHandlerWithPrefixThatMatch(path string) bool {
+	if h.handlers.prefixes == nil {
+		return false
+	}
+	_, ok := h.handlers.prefixes[h.prefix(path)]
+	return ok
+}
+
+func (h *Handler) hasRootHandler() bool {
+	return h.handlers.hasRootHandler
+}
+
+func (h *Handler) prefix(path string) string {
+	for _, part := range strings.Split(path, `/`) {
+		if part != `` {
+			return part
+		}
 	}
 
-	return h.routes
+	return ``
 }
 
-func (h *Handler) Handle(pattern string, handler http.Handler) {
-	h.getRoutes().Handle(pattern, handler)
-}

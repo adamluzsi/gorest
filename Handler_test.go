@@ -27,7 +27,8 @@ var _ interface {
 func TestHandler_ServeHTTP(t *testing.T) {
 	s := testcase.NewSpec(t)
 
-	s.Let(`handler`, func(t *testcase.T) interface{} { return &gorest.Handler{} })
+	s.Let(`controller`, func(t *testcase.T) interface{} { return nil })
+	s.Let(`handler`, func(t *testcase.T) interface{} { return gorest.NewHandler(t.I(`controller`)) })
 	var handler = func(t *testcase.T) *gorest.Handler { return t.I(`handler`).(*gorest.Handler) }
 
 	var serve = func(t *testcase.T) *httptest.ResponseRecorder {
@@ -65,13 +66,125 @@ func TestHandler_ServeHTTP(t *testing.T) {
 	s.Let(`resourceID`, func(t *testcase.T) interface{} { return strconv.Itoa(rand.Int()) })
 	var resourceID = func(t *testcase.T) string { return t.I(`resourceID`).(string) }
 
+	//s.Describe(`#setCollectionHandler + #LookupCollectionHandler`, func(s *testcase.Spec) {
+	//	s.Let(`path`, func(t *testcase.T) interface{} { return `/` })
+	//	s.Let(`method`, func(t *testcase.T) interface{} {
+	//		return fixtures.RandomElementFromSlice([]string{
+	//			http.MethodPost,
+	//			http.MethodGet,
+	//			http.MethodPut,
+	//			http.MethodPatch,
+	//			http.MethodDelete,
+	//			http.MethodConnect,
+	//			http.MethodOptions,
+	//			http.MethodTrace,
+	//			`CUSTOM`,
+	//		})
+	//	})
+	//
+	//	s.When(`collection handler is not yet set`, func(s *testcase.Spec) {
+	//		s.Then(`it will return with 404`, func(t *testcase.T) {
+	//			require.Equal(t, http.StatusNotFound, serve(t).Code)
+	//		})
+	//
+	//		andWhenCustomNotFoundHandlerProvided(s)
+	//
+	//		s.Then(`there will be no handler that can be looked up`, func(t *testcase.T) {
+	//			h, ok := handler(t).LookupCollectionHandler(t.I(`method`).(string), t.I(`path`).(string))
+	//			require.False(t, ok)
+	//			require.Nil(t, h)
+	//		})
+	//	})
+	//
+	//	s.When(`collection handler is provided`, func(s *testcase.Spec) {
+	//		s.Let(`code`, func(t *testcase.T) interface{} {
+	//			return 200 + rand.Intn(100)
+	//		})
+	//		s.Let(`msg`, func(t *testcase.T) interface{} { return fixtures.RandomString(7) })
+	//
+	//		s.Let(`col-handler`, func(t *testcase.T) interface{} {
+	//			return NewTestControllerMockHandler(t, t.I(`code`).(int), t.I(`msg`).(string))
+	//		})
+	//		s.Before(func(t *testcase.T) {
+	//			handler(t).setCollectionHandler(t.I(`method`).(string), "/", t.I(`col-handler`).(http.Handler))
+	//		})
+	//
+	//		s.Then(`it will use the index handler`, func(t *testcase.T) {
+	//			resp := serve(t)
+	//			require.Equal(t, t.I(`code`).(int), resp.Code)
+	//			require.Contains(t, resp.Body.String(), t.I(`msg`).(string))
+	//		})
+	//
+	//		s.Then(`it the handler can be looked up`, func(t *testcase.T) {
+	//			h, ok := handler(t).LookupCollectionHandler(t.I(`method`).(string), t.I(`path`).(string))
+	//			require.True(t, ok)
+	//			require.Equal(t, t.I(`col-handler`), h)
+	//		})
+	//	})
+	//})
+	//
+	//s.Describe(`#setResourceHandler + #LookupResourceHandler`, func(s *testcase.Spec) {
+	//	s.Let(`path`, func(t *testcase.T) interface{} { return fmt.Sprintf(`/%s`, resourceID(t)) })
+	//	s.Let(`method`, func(t *testcase.T) interface{} {
+	//		return fixtures.RandomElementFromSlice([]string{
+	//			http.MethodPost,
+	//			http.MethodGet,
+	//			http.MethodPut,
+	//			http.MethodPatch,
+	//			http.MethodDelete,
+	//			http.MethodConnect,
+	//			http.MethodOptions,
+	//			http.MethodTrace,
+	//			`CUSTOM`,
+	//		})
+	//	})
+	//
+	//	s.When(`resource handler is not yet set`, func(s *testcase.Spec) {
+	//		s.Then(`it will return with 404`, func(t *testcase.T) {
+	//			require.Equal(t, http.StatusNotFound, serve(t).Code)
+	//		})
+	//
+	//		andWhenCustomNotFoundHandlerProvided(s)
+	//
+	//		s.Then(`there will be no handler that can be looked up`, func(t *testcase.T) {
+	//			h, ok := handler(t).LookupResourceHandler(t.I(`method`).(string), t.I(`path`).(string))
+	//			require.False(t, ok)
+	//			require.Nil(t, h)
+	//		})
+	//	})
+	//
+	//	s.When(`resource handler is provided`, func(s *testcase.Spec) {
+	//		s.Let(`code`, func(t *testcase.T) interface{} {
+	//			return 200 + rand.Intn(100)
+	//		})
+	//		s.Let(`msg`, func(t *testcase.T) interface{} { return fixtures.RandomString(7) })
+	//
+	//		s.Let(`res-handler`, func(t *testcase.T) interface{} {
+	//			return NewTestControllerMockHandler(t, t.I(`code`).(int), t.I(`msg`).(string))
+	//		})
+	//		s.Before(func(t *testcase.T) {
+	//			handler(t).setResourceHandler(t.I(`method`).(string), t.I(`res-handler`).(http.Handler))
+	//		})
+	//
+	//		s.Then(`it will use the index handler`, func(t *testcase.T) {
+	//			resp := serve(t)
+	//			require.Equal(t, t.I(`code`).(int), resp.Code)
+	//			require.Contains(t, resp.Body.String(), t.I(`msg`).(string))
+	//		})
+	//
+	//		s.Then(`it the handler can be looked up`, func(t *testcase.T) {
+	//			h, ok := handler(t).LookupResourceHandler(t.I(`method`).(string), t.I(`path`).(string))
+	//			require.True(t, ok)
+	//			require.Equal(t, t.I(`res-handler`), h)
+	//		})
+	//	})
+	//})
+
 	s.Describe(`GET / - list`, func(s *testcase.Spec) {
 		s.Let(`method`, func(t *testcase.T) interface{} { return http.MethodGet })
 		s.Let(`path`, func(t *testcase.T) interface{} { return `/` })
 
-		s.When(`index handler is not set`, func(s *testcase.Spec) {
-			s.Before(func(t *testcase.T) { handler(t).List = nil })
-
+		s.When(`index handler is not yet set`, func(s *testcase.Spec) {
 			s.Then(`it will return with 404`, func(t *testcase.T) {
 				require.Equal(t, http.StatusNotFound, serve(t).Code)
 			})
@@ -79,9 +192,9 @@ func TestHandler_ServeHTTP(t *testing.T) {
 			andWhenCustomNotFoundHandlerProvided(s)
 		})
 
-		s.When(`index handler provided`, func(s *testcase.Spec) {
-			s.Before(func(t *testcase.T) {
-				handler(t).List = NewTestControllerMockHandler(t, 200, `index`)
+		s.When(`controller with list action is provided`, func(s *testcase.Spec) {
+			s.Let(`controller`, func(t *testcase.T) interface{} {
+				return ListController{NewTestControllerMockHandler(t, 200, `index`)}
 			})
 
 			s.Then(`it will use the index handler`, func(t *testcase.T) {
@@ -96,9 +209,7 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		s.Let(`method`, func(t *testcase.T) interface{} { return http.MethodPost })
 		s.Let(`path`, func(t *testcase.T) interface{} { return `/` })
 
-		s.When(`create handler is not set`, func(s *testcase.Spec) {
-			s.Before(func(t *testcase.T) { handler(t).Create = nil })
-
+		s.When(`create handler is not yet set`, func(s *testcase.Spec) {
 			s.Then(`it will return with 404`, func(t *testcase.T) {
 				require.Equal(t, http.StatusNotFound, serve(t).Code)
 			})
@@ -106,9 +217,9 @@ func TestHandler_ServeHTTP(t *testing.T) {
 			andWhenCustomNotFoundHandlerProvided(s)
 		})
 
-		s.When(`create handler provided`, func(s *testcase.Spec) {
-			s.Before(func(t *testcase.T) {
-				handler(t).Create = NewTestControllerMockHandler(t, http.StatusCreated, `created`)
+		s.When(`controller with create action is provided`, func(s *testcase.Spec) {
+			s.Let(`controller`, func(t *testcase.T) interface{} {
+				return CreateController{NewTestControllerMockHandler(t, http.StatusCreated, `created`)}
 			})
 
 			s.Then(`it will use the create handler`, func(t *testcase.T) {
@@ -119,22 +230,13 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		})
 	})
 
+	type ContextKeyTestResourceHandlerResourceID struct{}
+
 	var andWhenResourceHandlerIs = func(s *testcase.Spec, sub func(s *testcase.Spec)) {
-		var mw = func(next http.Handler, t *testcase.T) http.Handler {
-			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				t.Let(`request context`, r.Context())
-
-				if next != nil {
-					next.ServeHTTP(w, r)
-				}
-			})
-		}
 		s.When(`Resource handler is supplied`, func(s *testcase.Spec) {
-			s.Let(`id key`, func(t *testcase.T) interface{} { return rand.Int() })
-
 			s.Before(func(t *testcase.T) {
 				handler(t).ContextHandler = gorest.ContextHandlerFunc(func(ctx context.Context, id string) (context.Context, bool, error) {
-					ctx = context.WithValue(ctx, t.I(`id key`), id)
+					ctx = context.WithValue(ctx, ContextKeyTestResourceHandlerResourceID{}, id)
 					err, _ := t.I(`Resource handler error`).(error)
 					return ctx, t.I(`Resource found`).(bool), err
 				})
@@ -149,7 +251,7 @@ func TestHandler_ServeHTTP(t *testing.T) {
 					require.Equal(t, http.StatusInternalServerError, serve(t).Code)
 				})
 
-				s.And(`if a custom internal server error handler provided`, func(s *testcase.Spec) {
+				s.And(`if a custom internal server controller with error action is provided`, func(s *testcase.Spec) {
 					s.Before(func(t *testcase.T) {
 						handler(t).InternalServerError = NewTestControllerMockHandler(t, 518, `boom-pot`)
 					})
@@ -176,29 +278,14 @@ func TestHandler_ServeHTTP(t *testing.T) {
 			s.And(`Resource found without an error`, func(s *testcase.Spec) {
 				s.Let(`Resource found`, func(t *testcase.T) interface{} { return true })
 				s.Let(`Resource handler error`, func(t *testcase.T) interface{} { return nil })
-				s.Before(func(t *testcase.T) {
-					// MITM
-					h := handler(t)
-					h.Create = mw(h.Create, t)
-					h.List = mw(h.List, t)
-					h.Show = mw(h.Show, t)
-					h.Update = mw(h.Update, t)
-					h.Delete = mw(h.Delete, t)
+
+				s.Context(``, sub)
+
+				s.Then(`it yields no error`, func(t *testcase.T) {
+					rr := serve(t)
+					require.NotEqual(t, http.StatusInternalServerError, rr.Code)
+					require.NotEqual(t, http.StatusNotFound, rr.Code)
 				})
-
-				s.Then(`context will be updated by the context that the Resource handler returned`, func(t *testcase.T) {
-					serve(t)
-
-					var receivedRequestContext context.Context
-
-					require.NotPanics(t,
-						func() { receivedRequestContext = t.I(`request ctx`).(context.Context) },
-						`mock handler didn't received a request'`)
-
-					require.Equal(t, resourceID(t), receivedRequestContext.Value(t.I(`id key`)))
-				})
-
-				sub(s)
 			})
 		})
 	}
@@ -207,9 +294,7 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		s.Let(`method`, func(t *testcase.T) interface{} { return http.MethodGet })
 		s.Let(`path`, func(t *testcase.T) interface{} { return fmt.Sprintf(`/%s`, resourceID(t)) })
 
-		s.When(`show handler is not set`, func(s *testcase.Spec) {
-			s.Before(func(t *testcase.T) { handler(t).Show = nil })
-
+		s.When(`show handler is not yet set`, func(s *testcase.Spec) {
 			s.Then(`it will return with 404`, func(t *testcase.T) {
 				require.Equal(t, http.StatusNotFound, serve(t).Code)
 			})
@@ -217,10 +302,10 @@ func TestHandler_ServeHTTP(t *testing.T) {
 			andWhenCustomNotFoundHandlerProvided(s)
 		})
 
-		s.When(`show handler provided`, func(s *testcase.Spec) {
+		s.When(`controller with show action is provided`, func(s *testcase.Spec) {
 			const code = 201
-			s.Before(func(t *testcase.T) {
-				handler(t).Show = NewTestControllerMockHandler(t, code, `show`)
+			s.Let(`controller`, func(t *testcase.T) interface{} {
+				return ShowController{NewTestControllerMockHandler(t, code, `show`)}
 			})
 
 			s.Then(`it will use the index handler`, func(t *testcase.T) {
@@ -229,7 +314,18 @@ func TestHandler_ServeHTTP(t *testing.T) {
 				require.Equal(t, `show`, strings.TrimSpace(resp.Body.String()))
 			})
 
-			andWhenResourceHandlerIs(s, func(s *testcase.Spec) {})
+			andWhenResourceHandlerIs(s, func(s *testcase.Spec) {
+				s.Let(`controller`, func(t *testcase.T) interface{} {
+					return ShowController{GenericResourceHandler{
+						Message:    "show",
+						ContextKey: ContextKeyTestResourceHandlerResourceID{},
+					}}
+				})
+
+				s.Then(`stored values from the context can be retrieved`, func(t *testcase.T) {
+					require.Contains(t, serve(t).Body.String(), fmt.Sprintf(`show:%s`, resourceID(t)))
+				})
+			})
 		})
 	})
 
@@ -242,9 +338,7 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		})
 		s.Let(`path`, func(t *testcase.T) interface{} { return fmt.Sprintf(`/%s`, resourceID(t)) })
 
-		s.When(`update handler is not set`, func(s *testcase.Spec) {
-			s.Before(func(t *testcase.T) { handler(t).Update = nil })
-
+		s.When(`update handler is not yet set`, func(s *testcase.Spec) {
 			s.Then(`it will return with 404`, func(t *testcase.T) {
 				require.Equal(t, http.StatusNotFound, serve(t).Code)
 			})
@@ -252,10 +346,10 @@ func TestHandler_ServeHTTP(t *testing.T) {
 			andWhenCustomNotFoundHandlerProvided(s)
 		})
 
-		s.When(`update handler provided`, func(s *testcase.Spec) {
+		s.When(`controller with update action is provided`, func(s *testcase.Spec) {
 			const code = 203
-			s.Before(func(t *testcase.T) {
-				handler(t).Update = NewTestControllerMockHandler(t, code, `update`)
+			s.Let(`controller`, func(t *testcase.T) interface{} {
+				return UpdateController{NewTestControllerMockHandler(t, code, `update`)}
 			})
 
 			s.Then(`it will use the index handler`, func(t *testcase.T) {
@@ -264,7 +358,18 @@ func TestHandler_ServeHTTP(t *testing.T) {
 				require.Equal(t, `update`, strings.TrimSpace(resp.Body.String()))
 			})
 
-			andWhenResourceHandlerIs(s, func(s *testcase.Spec) {})
+			andWhenResourceHandlerIs(s, func(s *testcase.Spec) {
+				s.Let(`controller`, func(t *testcase.T) interface{} {
+					return UpdateController{GenericResourceHandler{
+						Message:    "update",
+						ContextKey: ContextKeyTestResourceHandlerResourceID{},
+					}}
+				})
+
+				s.Then(`stored values from the context can be retrieved`, func(t *testcase.T) {
+					require.Contains(t, serve(t).Body.String(), fmt.Sprintf(`update:%s`, resourceID(t)))
+				})
+			})
 		})
 	})
 
@@ -272,9 +377,7 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		s.Let(`method`, func(t *testcase.T) interface{} { return http.MethodDelete })
 		s.Let(`path`, func(t *testcase.T) interface{} { return fmt.Sprintf(`/%s`, resourceID(t)) })
 
-		s.When(`delete handler is not set`, func(s *testcase.Spec) {
-			s.Before(func(t *testcase.T) { handler(t).Delete = nil })
-
+		s.When(`delete handler is not set yet`, func(s *testcase.Spec) {
 			s.Then(`it will return with 404`, func(t *testcase.T) {
 				require.Equal(t, http.StatusNotFound, serve(t).Code)
 			})
@@ -282,10 +385,10 @@ func TestHandler_ServeHTTP(t *testing.T) {
 			andWhenCustomNotFoundHandlerProvided(s)
 		})
 
-		s.When(`delete handler provided`, func(s *testcase.Spec) {
+		s.When(`controller with delete action is provided`, func(s *testcase.Spec) {
 			const code = 204
-			s.Before(func(t *testcase.T) {
-				handler(t).Delete = NewTestControllerMockHandler(t, code, `delete`)
+			s.Let(`controller`, func(t *testcase.T) interface{} {
+				return DeleteController{NewTestControllerMockHandler(t, code, `delete`)}
 			})
 
 			s.Then(`it will use the delete handler`, func(t *testcase.T) {
@@ -294,30 +397,60 @@ func TestHandler_ServeHTTP(t *testing.T) {
 				require.Equal(t, `delete`, strings.TrimSpace(resp.Body.String()))
 			})
 
-			andWhenResourceHandlerIs(s, func(s *testcase.Spec) {})
+			andWhenResourceHandlerIs(s, func(s *testcase.Spec) {
+				s.Let(`controller`, func(t *testcase.T) interface{} {
+					return DeleteController{GenericResourceHandler{
+						Message:    "delete",
+						ContextKey: ContextKeyTestResourceHandlerResourceID{},
+					}}
+				})
+
+				s.Then(`stored values from the context can be retrieved`, func(t *testcase.T) {
+					require.Contains(t, serve(t).Body.String(), fmt.Sprintf(`delete:%s`, resourceID(t)))
+				})
+			})
 		})
 	})
 
 	s.Describe(`with Mount`, func(s *testcase.Spec) {
-		s.Before(func(t *testcase.T) {
+		s.Let(`controller`, func(t *testcase.T) interface{} {
 			t.Log(`given the top level controller has all the action`)
-			handler(t).Create = NewTestControllerMockHandler(t, http.StatusForbidden, `FORBIDDEN`)
-			handler(t).List = NewTestControllerMockHandler(t, http.StatusForbidden, `FORBIDDEN`)
-			handler(t).Show = NewTestControllerMockHandler(t, http.StatusForbidden, `FORBIDDEN`)
-			handler(t).Update = NewTestControllerMockHandler(t, http.StatusForbidden, `FORBIDDEN`)
-			handler(t).Delete = NewTestControllerMockHandler(t, http.StatusForbidden, `FORBIDDEN`)
+			h := NewTestControllerMockHandler(t, http.StatusForbidden, `FORBIDDEN`)
 			t.Log(`but none of those actions should be called`)
+			return struct {
+				CreateController
+				ListController
+				ShowController
+				UpdateController
+				DeleteController
+			}{
+				CreateController: CreateController{h},
+				ListController:   ListController{h},
+				ShowController:   ShowController{h},
+				UpdateController: UpdateController{h},
+				DeleteController: DeleteController{h},
+			}
 		})
+
 		s.When(`valid sub controller successfully mounted`, func(s *testcase.Spec) {
 			s.Let(`sub-handler`, func(t *testcase.T) interface{} {
-				return &gorest.Handler{
-					ContextHandler: gorest.DefaultContextHandler{ContextKey: `sub-id`},
-					Create:         NewTestControllerMockHandler(t, http.StatusOK, `Create`),
-					List:           NewTestControllerMockHandler(t, http.StatusOK, `List`),
-					Show:           NewTestControllerMockHandler(t, http.StatusOK, `Show`),
-					Update:         NewTestControllerMockHandler(t, http.StatusOK, `Update`),
-					Delete:         NewTestControllerMockHandler(t, http.StatusOK, `Delete`),
-				}
+				return gorest.NewHandler(
+					struct {
+						gorest.ContextHandler
+						CreateController
+						ListController
+						ShowController
+						UpdateController
+						DeleteController
+					}{
+						ContextHandler:   gorest.DefaultContextHandler{ContextKey: `sub-id`},
+						CreateController: CreateController{NewTestControllerMockHandler(t, http.StatusOK, `Create`)},
+						ListController:   ListController{NewTestControllerMockHandler(t, http.StatusOK, `List`)},
+						ShowController:   ShowController{NewTestControllerMockHandler(t, http.StatusOK, `Show`)},
+						UpdateController: UpdateController{NewTestControllerMockHandler(t, http.StatusOK, `Update`)},
+						DeleteController: DeleteController{NewTestControllerMockHandler(t, http.StatusOK, `Delete`)},
+					},
+				)
 			})
 			s.Before(func(t *testcase.T) { gorest.Mount(handler(t), `/subs/`, t.I(`sub-handler`).(*gorest.Handler)) })
 
@@ -364,11 +497,16 @@ func TestHandler_ServeHTTP(t *testing.T) {
 			h := &gorest.Handler{}
 
 			ch := gorest.DefaultContextHandler{ContextKey: `bookID`}
-			booksShow := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				_, _ = fmt.Fprintf(w, `%s`, ch.GetResourceID(r.Context()))
+			books := gorest.NewHandler(struct {
+				gorest.ContextHandler
+				ShowController
+			}{
+				ContextHandler: ch,
+				ShowController: ShowController{Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					_, _ = fmt.Fprintf(w, `%s`, ch.GetResourceID(r.Context()))
+				})},
 			})
-
-			gorest.Mount(h, `/books/`, &gorest.Handler{ContextHandler: ch, Show: booksShow})
+			gorest.Mount(h, `/books/`, books)
 
 			w := httptest.NewRecorder()
 			r := httptest.NewRequest(http.MethodGet, `/:topResourceID/books/42`, &bytes.Buffer{})
@@ -418,28 +556,29 @@ func TestHandler_ServeHTTP(t *testing.T) {
 					s.Let(`path`, func(t *testcase.T) interface{} { return `/` })
 
 					s.And(`action is set`, func(s *testcase.Spec) {
-						s.Before(func(t *testcase.T) { handler(t).Create = NewTestControllerMockHandler(t, code, msg) })
+						s.Let(`controller`, func(t *testcase.T) interface{} {
+							return CreateController{NewTestControllerMockHandler(t, code, msg)}
+						})
 
 						thenItWillUseTheControllerHandler(s)
 					})
-					s.And(`action is not set`, func(s *testcase.Spec) {
-						s.Before(func(t *testcase.T) { handler(t).Create = nil })
-
+					s.And(`action is not yet set`, func(s *testcase.Spec) {
 						thenItWillUseTheAttachedHandler(s)
 					})
 				})
+
 				s.Context(`list action`, func(s *testcase.Spec) {
 					s.Let(`method`, func(t *testcase.T) interface{} { return http.MethodGet })
 					s.Let(`path`, func(t *testcase.T) interface{} { return `/` })
 
 					s.And(`action is set`, func(s *testcase.Spec) {
-						s.Before(func(t *testcase.T) { handler(t).List = NewTestControllerMockHandler(t, code, msg) })
+						s.Let(`controller`, func(t *testcase.T) interface{} {
+							return ListController{NewTestControllerMockHandler(t, code, msg)}
+						})
 
 						thenItWillUseTheControllerHandler(s)
 					})
-					s.And(`action is not set`, func(s *testcase.Spec) {
-						s.Before(func(t *testcase.T) { handler(t).List = nil })
-
+					s.And(`action is not yet set`, func(s *testcase.Spec) {
 						thenItWillUseTheAttachedHandler(s)
 					})
 				})
@@ -448,13 +587,13 @@ func TestHandler_ServeHTTP(t *testing.T) {
 					s.Let(`path`, func(t *testcase.T) interface{} { return fmt.Sprintf(`/%s`, resourceID(t)) })
 
 					s.And(`action is set`, func(s *testcase.Spec) {
-						s.Before(func(t *testcase.T) { handler(t).Show = NewTestControllerMockHandler(t, code, msg) })
+						s.Let(`controller`, func(t *testcase.T) interface{} {
+							return ShowController{NewTestControllerMockHandler(t, code, msg)}
+						})
 
 						thenItWillUseTheControllerHandler(s)
 					})
-					s.And(`action is not set`, func(s *testcase.Spec) {
-						s.Before(func(t *testcase.T) { handler(t).Show = nil })
-
+					s.And(`action is not yet set`, func(s *testcase.Spec) {
 						thenItWillUseTheAttachedHandler(s)
 					})
 				})
@@ -463,13 +602,13 @@ func TestHandler_ServeHTTP(t *testing.T) {
 					s.Let(`path`, func(t *testcase.T) interface{} { return fmt.Sprintf(`/%s`, resourceID(t)) })
 
 					s.And(`action is set`, func(s *testcase.Spec) {
-						s.Before(func(t *testcase.T) { handler(t).Update = NewTestControllerMockHandler(t, code, msg) })
+						s.Let(`controller`, func(t *testcase.T) interface{} {
+							return UpdateController{NewTestControllerMockHandler(t, code, msg)}
+						})
 
 						thenItWillUseTheControllerHandler(s)
 					})
-					s.And(`action is not set`, func(s *testcase.Spec) {
-						s.Before(func(t *testcase.T) { handler(t).Update = nil })
-
+					s.And(`action is not yet set`, func(s *testcase.Spec) {
 						thenItWillUseTheAttachedHandler(s)
 					})
 				})
@@ -478,13 +617,13 @@ func TestHandler_ServeHTTP(t *testing.T) {
 					s.Let(`path`, func(t *testcase.T) interface{} { return fmt.Sprintf(`/%s`, resourceID(t)) })
 
 					s.And(`action is set`, func(s *testcase.Spec) {
-						s.Before(func(t *testcase.T) { handler(t).Delete = NewTestControllerMockHandler(t, code, msg) })
+						s.Let(`controller`, func(t *testcase.T) interface{} {
+							return DeleteController{NewTestControllerMockHandler(t, code, msg)}
+						})
 
 						thenItWillUseTheControllerHandler(s)
 					})
-					s.And(`action is not set`, func(s *testcase.Spec) {
-						s.Before(func(t *testcase.T) { handler(t).Delete = nil })
-
+					s.And(`action is not yet set`, func(s *testcase.Spec) {
 						thenItWillUseTheAttachedHandler(s)
 					})
 				})
@@ -545,8 +684,10 @@ func TestHandler_ServeHTTP(t *testing.T) {
 
 		s.Before(func(t *testcase.T) {
 			t.Log(`given we have no controller action defined regarding collection level operation`)
-			handler(t).List = nil
-			handler(t).Create = nil
+			_, ok := handler(t).LookupCollectionHandler(http.MethodGet, t.I(`path`).(string))
+			require.False(t, ok)
+			_, ok = handler(t).LookupCollectionHandler(http.MethodPost, t.I(`path`).(string))
+			require.False(t, ok)
 		})
 
 		s.When(`nothing set to handle the request`, func(s *testcase.Spec) {
@@ -620,10 +761,10 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		})
 
 		s.When(`panic occurs during controller action`, func(s *testcase.Spec) {
-			s.Before(func(t *testcase.T) {
-				handler(t).Show = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			s.Let(`controller`, func(t *testcase.T) interface{} {
+				return ShowController{Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 					panic(`boom`)
-				})
+				})}
 			})
 
 			s.Then(`custom internal server error handler will be used`, func(t *testcase.T) {
@@ -648,7 +789,13 @@ func TestHandler_ServeHTTP(t *testing.T) {
 }
 
 func BenchmarkController_ServeHTTP(b *testing.B) {
-	h := gorest.Handler{Show: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})}
+	h := gorest.NewHandler(struct {
+		gorest.ContextHandler
+		ShowController
+	}{
+		ContextHandler: gorest.DefaultContextHandler{ContextKey: `bench`},
+		ShowController: ShowController{Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})},
+	})
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {

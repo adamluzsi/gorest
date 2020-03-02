@@ -10,27 +10,22 @@ import (
 
 func ExampleHandler() {
 	mux := http.NewServeMux()
-
-	var teapotHandler http.Handler = &gorest.Handler{
-		ContextHandler: TeapotResourceHandler{},
-		Show:           TeapotShowAction{},
-	}
+	teapotHandler := gorest.NewHandler(TeapotController{})
 
 	// to mount into a serve multiplexer
-	teapotHandler = http.StripPrefix(`/teapots`, teapotHandler)
-	mux.Handle(`/teapots`, teapotHandler)
-	mux.Handle(`/teapots/`, teapotHandler)
+	h := http.StripPrefix(`/teapots`, teapotHandler)
+	mux.Handle(`/teapots`, h)
+	mux.Handle(`/teapots/`, h)
 
-	// OR do the same, but with this function.
-	// I often forget to mount my controller also to the path without slash suffix.
-	gorest.Mount(mux, `/teapots`, &gorest.Handler{Show: TeapotShowAction{}})
+	// or do the same, but with this function.
+	gorest.Mount(mux, `/teapots`, teapotHandler)
 }
 
-type TeapotResourceHandler struct{}
+type TeapotController struct{}
 
-type ContextTeapotKey struct{}
+type ContextKeyTeapot struct{}
 
-func (t TeapotResourceHandler) ContextWithResource(ctx context.Context, teapotID string) (newCTX context.Context, found bool, err error) {
+func (ctrl TeapotController) ContextWithResource(ctx context.Context, teapotID string) (newCTX context.Context, found bool, err error) {
 	teapot, found, err := lookupTeapotByID(ctx, teapotID)
 	if err != nil {
 		// teapot lookup encountered an unexpected error
@@ -41,13 +36,11 @@ func (t TeapotResourceHandler) ContextWithResource(ctx context.Context, teapotID
 		return ctx, false, nil
 	}
 	// set teapot object in context so handlers can access the Resource easily
-	return context.WithValue(ctx, ContextTeapotKey{}, teapot), true, nil
+	return context.WithValue(ctx, ContextKeyTeapot{}, teapot), true, nil
 }
 
-type TeapotShowAction struct{}
-
-func (e TeapotShowAction) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	teapot := r.Context().Value(ContextTeapotKey{}).(Teapot)
+func (ctrl TeapotController) Show(w http.ResponseWriter, r *http.Request) {
+	teapot := r.Context().Value(ContextKeyTeapot{}).(Teapot)
 	_, _ = fmt.Fprintf(w, `my teapot resource: %v`, teapot)
 }
 
