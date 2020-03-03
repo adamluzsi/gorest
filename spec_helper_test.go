@@ -125,37 +125,3 @@ type GenericResourceHandler struct {
 func (ctrl GenericResourceHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	_, _ = fmt.Fprintf(w, `%s:%s`, ctrl.Message, r.Context().Value(ctrl.ContextKey))
 }
-
-type ResponseWriterWriter interface {
-	ServeHTTP(w http.ResponseWriter, r *http.Request)
-}
-
-type ListController struct{ http.Handler }
-
-func (ctrl ListController) List(w http.ResponseWriter, r *http.Request) {
-	ctrl.Handler.ServeHTTP(w, r)
-}
-
-type CreateController struct{ http.Handler }
-
-func (ctrl CreateController) Create(w http.ResponseWriter, r *http.Request) {
-	ctrl.Handler.ServeHTTP(w, r)
-}
-
-type ShowController struct{ http.Handler }
-
-func (ctrl ShowController) Show(w http.ResponseWriter, r *http.Request) {
-	ctrl.Handler.ServeHTTP(w, r)
-}
-
-type UpdateController struct{ http.Handler }
-
-func (ctrl UpdateController) Update(w http.ResponseWriter, r *http.Request) {
-	ctrl.Handler.ServeHTTP(w, r)
-}
-
-type DeleteController struct{ http.Handler }
-
-func (ctrl DeleteController) Delete(w http.ResponseWriter, r *http.Request) {
-	ctrl.Handler.ServeHTTP(w, r)
-}
