@@ -28,7 +28,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	switch r.URL.Path {
 	case `/`, ``:
-		ch, ok := h.lookupCollectionHandler(method, r.URL.Path)
+		ch, ok := h.operations.collection.Lookup(method)
 		if !ok {
 			h.notFound(w, r)
 			return
@@ -53,13 +53,23 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 		r = r.WithContext(ctx)
 
-		rh, ok := h.lookupResourceHandler(method, r.URL.Path)
+		if h.handlers.hasHandlerWithPrefixThatMatch(r.URL.Path) {
+			h.handlers.ServeHTTP(w, r)
+			return
+		}
+
+		rh, ok := h.operations.resource.Lookup(method)
+		if !ok && h.handlers.hasRootHandler {
+			h.handlers.ServeHTTP(w, r)
+			return
+		}
 		if !ok {
 			h.notFound(w, r)
 			return
 		}
 
 		rh.ServeHTTP(w, r)
+
 	}
 }
 
@@ -101,22 +111,6 @@ func (h *Handler) handleResourceID(ctx context.Context, resourceID string) (cont
 	}
 
 	return h.ContextHandler.ContextWithResource(ctx, resourceID)
-}
-
-func (h *Handler) lookupCollectionHandler(method, path string) (http.Handler, bool) {
-	handler, ok := h.operations.collection.Lookup(method)
-	return handler, ok
-}
-
-func (h *Handler) lookupResourceHandler(method, path string) (http.Handler, bool) {
-	if h.handlers.hasHandlerWithPrefixThatMatch(path) {
-		return h.handlers, true
-	}
-	handler, ok := h.operations.resource.Lookup(method)
-	if !ok && h.handlers.hasRootHandler {
-		return h.handlers, true
-	}
-	return handler, ok
 }
 
 type operations struct {
