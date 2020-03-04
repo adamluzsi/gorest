@@ -64,19 +64,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) Handle(pattern string, handler http.Handler) {
-	if pattern == `/` {
-		h.handlers.hasRootHandler = true
-	} else {
-		if h.handlers.prefixes == nil {
-			h.handlers.prefixes = make(map[string]struct{})
-		}
-		h.handlers.prefixes[h.prefix(pattern)] = struct{}{}
-	}
-
-	if h.handlers.ServeMux == nil {
-		h.handlers.ServeMux = http.NewServeMux()
-	}
-	h.handlers.ServeMux.Handle(pattern, handler)
+	h.handlers.Handle(pattern, handler)
 }
 
 func (h *Handler) internalServerError(w http.ResponseWriter, r *http.Request) {
@@ -115,37 +103,16 @@ func (h *Handler) handleResourceID(ctx context.Context, resourceID string) (cont
 	return h.ContextHandler.ContextWithResource(ctx, resourceID)
 }
 
-func (h *Handler) hasHandlerWithPrefixThatMatch(path string) bool {
-	if h.handlers.prefixes == nil {
-		return false
-	}
-	_, ok := h.handlers.prefixes[h.prefix(path)]
-	return ok
-}
-
-func (h *Handler) prefix(path string) string {
-	for _, part := range strings.Split(path, `/`) {
-		if part != `` {
-			return part
-		}
-	}
-
-	return ``
-}
-
 func (h *Handler) lookupCollectionHandler(method, path string) (http.Handler, bool) {
-	handler, ok := h.operations.collection.Lookup(method, path)
-	if !ok && h.handlers.hasRootHandler {
-		return h.handlers, true
-	}
+	handler, ok := h.operations.collection.Lookup(method)
 	return handler, ok
 }
 
 func (h *Handler) lookupResourceHandler(method, path string) (http.Handler, bool) {
-	if h.hasHandlerWithPrefixThatMatch(path) {
+	if h.handlers.hasHandlerWithPrefixThatMatch(path) {
 		return h.handlers, true
 	}
-	handler, ok := h.operations.resource.Lookup(method, path)
+	handler, ok := h.operations.resource.Lookup(method)
 	if !ok && h.handlers.hasRootHandler {
 		return h.handlers, true
 	}
@@ -156,7 +123,7 @@ type operations struct {
 	routes map[string]http.Handler
 }
 
-func (o operations) Lookup(method, path string) (http.Handler, bool) {
+func (o operations) Lookup(method string) (http.Handler, bool) {
 	if o.routes == nil {
 		return nil, false
 	}
@@ -175,4 +142,38 @@ type handlers struct {
 	*http.ServeMux
 	prefixes       map[string]struct{}
 	hasRootHandler bool
+}
+
+func (h handlers) hasHandlerWithPrefixThatMatch(path string) bool {
+	if h.prefixes == nil {
+		return false
+	}
+	_, ok := h.prefixes[h.prefix(path)]
+	return ok
+}
+
+func (h handlers) prefix(path string) string {
+	for _, part := range strings.Split(path, `/`) {
+		if part != `` {
+			return part
+		}
+	}
+
+	return ``
+}
+
+func (h *handlers) Handle(pattern string, handler http.Handler) {
+	if pattern == `/` {
+		h.hasRootHandler = true
+	} else {
+		if h.prefixes == nil {
+			h.prefixes = make(map[string]struct{})
+		}
+		h.prefixes[h.prefix(pattern)] = struct{}{}
+	}
+
+	if h.ServeMux == nil {
+		h.ServeMux = http.NewServeMux()
+	}
+	h.ServeMux.Handle(pattern, handler)
 }

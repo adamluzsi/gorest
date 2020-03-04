@@ -177,7 +177,7 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		})
 	}
 
-	s.Describe(`GET /{resourceID} - show`, func(s *testcase.Spec) {
+	s.Describe(`GET /{resource-id} - show`, func(s *testcase.Spec) {
 		s.Let(`method`, func(t *testcase.T) interface{} { return http.MethodGet })
 		s.Let(`path`, func(t *testcase.T) interface{} { return fmt.Sprintf(`/%s`, resourceID(t)) })
 
@@ -216,7 +216,7 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		})
 	})
 
-	s.Describe(`PUT|PATCH /{resourceID} - update`, func(s *testcase.Spec) {
+	s.Describe(`PUT|PATCH /{resource-id} - update`, func(s *testcase.Spec) {
 		s.Let(`method`, func(t *testcase.T) interface{} {
 			if rand.Intn(1) == 0 {
 				return http.MethodPut
@@ -260,7 +260,7 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		})
 	})
 
-	s.Describe(`DELETE /{resourceID} - delete`, func(s *testcase.Spec) {
+	s.Describe(`DELETE /{resource-id} - delete`, func(s *testcase.Spec) {
 		s.Let(`method`, func(t *testcase.T) interface{} { return http.MethodDelete })
 		s.Let(`path`, func(t *testcase.T) interface{} { return fmt.Sprintf(`/%s`, resourceID(t)) })
 
@@ -437,6 +437,12 @@ func TestHandler_ServeHTTP(t *testing.T) {
 				})
 			}
 
+			var thenItWillReturnWithNotFound = func(s *testcase.Spec) {
+				s.Then(`it will use the attached handler`, func(t *testcase.T) {
+					require.Equal(t, http.StatusNotFound, serve(t).Code)
+				})
+			}
+
 			s.And(`the path points to`, func(s *testcase.Spec) {
 				s.Context(`create action`, func(s *testcase.Spec) {
 					s.Let(`method`, func(t *testcase.T) interface{} { return http.MethodPost })
@@ -450,10 +456,9 @@ func TestHandler_ServeHTTP(t *testing.T) {
 						thenItWillUseTheControllerHandler(s)
 					})
 					s.And(`action is not yet set`, func(s *testcase.Spec) {
-						thenItWillUseTheAttachedHandler(s)
+						thenItWillReturnWithNotFound(s)
 					})
 				})
-
 				s.Context(`list action`, func(s *testcase.Spec) {
 					s.Let(`method`, func(t *testcase.T) interface{} { return http.MethodGet })
 					s.Let(`path`, func(t *testcase.T) interface{} { return `/` })
@@ -466,7 +471,7 @@ func TestHandler_ServeHTTP(t *testing.T) {
 						thenItWillUseTheControllerHandler(s)
 					})
 					s.And(`action is not yet set`, func(s *testcase.Spec) {
-						thenItWillUseTheAttachedHandler(s)
+						thenItWillReturnWithNotFound(s)
 					})
 				})
 				s.Context(`show action`, func(s *testcase.Spec) {
@@ -565,20 +570,28 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		})
 	})
 
-	s.Describe(`CUSTOM / - unknown http method used`, func(s *testcase.Spec) {
+	s.Describe(`CUSTOM /{resource-id} - unknown http method used`, func(s *testcase.Spec) {
 		s.Let(`method`, func(t *testcase.T) interface{} { return `CUSTOM` })
-		s.Let(`path`, func(t *testcase.T) interface{} { return `/` })
+		s.Let(`path`, func(t *testcase.T) interface{} { return fmt.Sprintf(`/%s`, resourceID(t)) })
 
 		s.Before(func(t *testcase.T) {
 			var rr *httptest.ResponseRecorder
 
-			t.Log(`given we have no controller action defined regarding collection level operation`)
+			t.Log(`given we have no controller action defined regarding resource level operation`)
 			rr = httptest.NewRecorder()
 			handler(t).ServeHTTP(rr, httptest.NewRequest(http.MethodGet, `/`, nil))
 			require.Equal(t, http.StatusNotFound, rr.Code)
 
 			rr = httptest.NewRecorder()
-			handler(t).ServeHTTP(rr, httptest.NewRequest(http.MethodPost, `/`, nil))
+			handler(t).ServeHTTP(rr, httptest.NewRequest(http.MethodPut, `/`, nil))
+			require.Equal(t, http.StatusNotFound, rr.Code)
+
+			rr = httptest.NewRecorder()
+			handler(t).ServeHTTP(rr, httptest.NewRequest(http.MethodDelete, `/`, nil))
+			require.Equal(t, http.StatusNotFound, rr.Code)
+
+			rr = httptest.NewRecorder()
+			handler(t).ServeHTTP(rr, httptest.NewRequest(t.I(`method`).(string), `/`, nil))
 			require.Equal(t, http.StatusNotFound, rr.Code)
 		})
 
@@ -590,20 +603,26 @@ func TestHandler_ServeHTTP(t *testing.T) {
 			andWhenCustomNotFoundHandlerProvided(s)
 		})
 
-		s.When(`a global handler is set as fallback solution`, func(s *testcase.Spec) {
-			s.Before(func(t *testcase.T) {
-				handler(t).Handle(`/`, NewTestControllerMockHandler(t, http.StatusTeapot, http.StatusText(http.StatusTeapot)))
-			})
+		s.Describe(`define custom handler through #Handle`, func(s *testcase.Spec) {
+			s.When(`a global handler is set as fallback solution`, func(s *testcase.Spec) {
+				s.Before(func(t *testcase.T) {
+					handler(t).Handle(`/`, NewTestControllerMockHandler(t, http.StatusTeapot, http.StatusText(http.StatusTeapot)))
+				})
 
-			s.Then(`it will use the attached`, func(t *testcase.T) {
-				resp := serve(t)
-				require.Equal(t, http.StatusTeapot, resp.Code)
-				require.Equal(t, http.StatusText(http.StatusTeapot), strings.TrimSpace(resp.Body.String()))
+				s.Then(`it will use the attached`, func(t *testcase.T) {
+					resp := serve(t)
+					require.Equal(t, http.StatusTeapot, resp.Code)
+					require.Equal(t, http.StatusText(http.StatusTeapot), strings.TrimSpace(resp.Body.String()))
+				})
 			})
+		})
+
+		s.Describe(`define custom handler through #Operations.Resource.Set`, func(s *testcase.Spec) {
+			s.Before(func(t *testcase.T) { t.Skip(`TBD`) })
 		})
 	})
 
-	s.Describe(`CUSTOM /{resourceID} - unknown http method used`, func(s *testcase.Spec) {
+	s.Describe(`CUSTOM /{resource-id} - unknown http method used`, func(s *testcase.Spec) {
 		s.Let(`method`, func(t *testcase.T) interface{} { return `CUSTOM` })
 		s.Let(`path`, func(t *testcase.T) interface{} { return fmt.Sprintf(`/%s`, resourceID(t)) })
 
