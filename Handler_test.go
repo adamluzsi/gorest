@@ -570,11 +570,16 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		s.Let(`path`, func(t *testcase.T) interface{} { return `/` })
 
 		s.Before(func(t *testcase.T) {
+			var rr *httptest.ResponseRecorder
+
 			t.Log(`given we have no controller action defined regarding collection level operation`)
-			_, ok := handler(t).LookupCollectionHandler(http.MethodGet, t.I(`path`).(string))
-			require.False(t, ok)
-			_, ok = handler(t).LookupCollectionHandler(http.MethodPost, t.I(`path`).(string))
-			require.False(t, ok)
+			rr = httptest.NewRecorder()
+			handler(t).ServeHTTP(rr, httptest.NewRequest(http.MethodGet, `/`, nil))
+			require.Equal(t, http.StatusNotFound, rr.Code)
+
+			rr = httptest.NewRecorder()
+			handler(t).ServeHTTP(rr, httptest.NewRequest(http.MethodPost, `/`, nil))
+			require.Equal(t, http.StatusNotFound, rr.Code)
 		})
 
 		s.When(`nothing set to handle the request`, func(s *testcase.Spec) {

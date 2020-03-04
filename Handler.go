@@ -11,14 +11,10 @@ type Handler struct {
 	NotFound            http.Handler
 	InternalServerError http.Handler
 	operations          struct {
-		collection map[string]http.Handler
-		resource   map[string]http.Handler
+		collection operations
+		resource   operations
 	}
-	handlers struct {
-		*http.ServeMux
-		prefixes       map[string]struct{}
-		hasRootHandler bool
-	}
+	handlers handlers
 }
 
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -32,7 +28,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	switch r.URL.Path {
 	case `/`, ``:
-		ch, ok := h.LookupCollectionHandler(method, r.URL.Path)
+		ch, ok := h.lookupCollectionHandler(method, r.URL.Path)
 		if !ok {
 			h.notFound(w, r)
 			return
@@ -57,7 +53,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 		r = r.WithContext(ctx)
 
-		rh, ok := h.LookupResourceHandler(method, r.URL.Path)
+		rh, ok := h.lookupResourceHandler(method, r.URL.Path)
 		if !ok {
 			h.notFound(w, r)
 			return
@@ -81,55 +77,6 @@ func (h *Handler) Handle(pattern string, handler http.Handler) {
 		h.handlers.ServeMux = http.NewServeMux()
 	}
 	h.handlers.ServeMux.Handle(pattern, handler)
-}
-
-func (h *Handler) LookupCollectionHandler(method, _ string) (http.Handler, bool) {
-	var (
-		handler http.Handler
-		ok      bool
-	)
-	if h.operations.collection == nil {
-		handler, ok = nil, false
-	} else {
-		handler, ok = h.operations.collection[method]
-	}
-	if !ok && h.hasRootHandler() {
-		return h.handlers, true
-	}
-	return handler, ok
-}
-
-func (h *Handler) LookupResourceHandler(method, path string) (http.Handler, bool) {
-	if h.hasHandlerWithPrefixThatMatch(path) {
-		return h.handlers, true
-	}
-	var (
-		handler http.Handler
-		ok      bool
-	)
-	if h.operations.resource == nil {
-		handler, ok = nil, false
-	} else {
-		handler, ok = h.operations.resource[method]
-	}
-	if !ok && h.hasRootHandler() {
-		return h.handlers, true
-	}
-	return handler, ok
-}
-
-func (h *Handler) setCollectionHandler(httpMethod string, handler http.Handler) {
-	if h.operations.collection == nil {
-		h.operations.collection = make(map[string]http.Handler)
-	}
-	h.operations.collection[httpMethod] = handler
-}
-
-func (h *Handler) setResourceHandler(httpMethod string, handler http.Handler) {
-	if h.operations.resource == nil {
-		h.operations.resource = make(map[string]http.Handler)
-	}
-	h.operations.resource[httpMethod] = handler
 }
 
 func (h *Handler) internalServerError(w http.ResponseWriter, r *http.Request) {
@@ -176,10 +123,6 @@ func (h *Handler) hasHandlerWithPrefixThatMatch(path string) bool {
 	return ok
 }
 
-func (h *Handler) hasRootHandler() bool {
-	return h.handlers.hasRootHandler
-}
-
 func (h *Handler) prefix(path string) string {
 	for _, part := range strings.Split(path, `/`) {
 		if part != `` {
@@ -190,3 +133,46 @@ func (h *Handler) prefix(path string) string {
 	return ``
 }
 
+func (h *Handler) lookupCollectionHandler(method, path string) (http.Handler, bool) {
+	handler, ok := h.operations.collection.Lookup(method, path)
+	if !ok && h.handlers.hasRootHandler {
+		return h.handlers, true
+	}
+	return handler, ok
+}
+
+func (h *Handler) lookupResourceHandler(method, path string) (http.Handler, bool) {
+	if h.hasHandlerWithPrefixThatMatch(path) {
+		return h.handlers, true
+	}
+	handler, ok := h.operations.resource.Lookup(method, path)
+	if !ok && h.handlers.hasRootHandler {
+		return h.handlers, true
+	}
+	return handler, ok
+}
+
+type operations struct {
+	routes map[string]http.Handler
+}
+
+func (o operations) Lookup(method, path string) (http.Handler, bool) {
+	if o.routes == nil {
+		return nil, false
+	}
+	h, ok := o.routes[method]
+	return h, ok
+}
+
+func (o *operations) Set(httpMethod string, handler http.Handler) {
+	if o.routes == nil {
+		o.routes = make(map[string]http.Handler)
+	}
+	o.routes[httpMethod] = handler
+}
+
+type handlers struct {
+	*http.ServeMux
+	prefixes       map[string]struct{}
+	hasRootHandler bool
+}
