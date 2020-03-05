@@ -15,7 +15,7 @@ import (
 	"github.com/adamluzsi/gorest"
 )
 
-func TestUnshiftPathParam(t *testing.T) {
+func TestUnshiftPathParamFromRequest(t *testing.T) {
 	s := testcase.NewSpec(t)
 
 	var subject = func(t *testcase.T) (*http.Request, string) {
@@ -56,7 +56,7 @@ func TestUnshiftPathParam(t *testing.T) {
 		s.Then(`it unshift the parameter`, func(t *testcase.T) {
 			r, param := subject(t)
 			require.Equal(t, value, param)
-			require.Equal(t, ``, r.URL.Path)
+			require.Equal(t, `/`, r.URL.Path)
 		})
 	})
 
@@ -91,6 +91,16 @@ func TestUnshiftPathParam(t *testing.T) {
 			r, param := subject(t)
 			require.Equal(t, value, param)
 			require.Equal(t, `/etc`, r.URL.Path)
+		})
+	})
+
+	s.When(`request path is empty`, func(s *testcase.Spec) {
+		s.Let(`path`, func(t *testcase.T) interface{} { return `` })
+
+		s.Then(`it will unshift the parameter`, func(t *testcase.T) {
+			r, param := subject(t)
+			require.Equal(t, ``, param)
+			require.Equal(t, `/`, r.URL.Path)
 		})
 	})
 }
