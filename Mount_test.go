@@ -11,7 +11,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/adamluzsi/gorest"
-	http2 "github.com/adamluzsi/gorest/controllers"
 )
 
 var (
@@ -96,14 +95,14 @@ func TestMount(t *testing.T) {
 
 		resources := gorest.NewHandler(struct {
 			gorest.ContextHandler
-			http2.ShowControllerByHTTPHandler
+			gorest.ShowController
 		}{
 			ContextHandler: ctxHandler,
-			ShowControllerByHTTPHandler: http2.ShowControllerByHTTPHandler{Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			ShowController: gorest.AsShowController(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				_, _ = fmt.Fprintf(w, `%s`, ctxHandler.GetResourceID(r.Context()))
-			})},
+			})),
 		})
-		
+
 		mux := http.NewServeMux()
 		gorest.Mount(mux, `/routes`, resources)
 

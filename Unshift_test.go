@@ -33,7 +33,7 @@ func TestUnshiftPathParamFromRequest(t *testing.T) {
 	})
 
 	s.Let(`method`, func(t *testcase.T) interface{} {
-		return fixtures.RandomElementFromSlice([]string{
+		return fixtures.Random.ElementFromSlice([]string{
 			http.MethodGet,
 			http.MethodPost,
 			http.MethodPut,
@@ -46,7 +46,7 @@ func TestUnshiftPathParamFromRequest(t *testing.T) {
 		}).(string)
 	})
 
-	s.Let(`payload`, func(t *testcase.T) interface{} { return fixtures.RandomString(42) })
+	s.Let(`payload`, func(t *testcase.T) interface{} { return fixtures.Random.String() })
 	s.Let(`body`, func(t *testcase.T) interface{} { return strings.NewReader(t.I(`payload`).(string)) })
 
 	s.When(`request path has value but without slash prefix`, func(s *testcase.Spec) {

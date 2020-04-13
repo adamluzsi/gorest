@@ -17,7 +17,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/adamluzsi/gorest"
-	"github.com/adamluzsi/gorest/controllers"
 )
 
 var _ interface {
@@ -81,7 +80,7 @@ func TestHandler_ServeHTTP(t *testing.T) {
 
 		s.When(`controller with list action is provided`, func(s *testcase.Spec) {
 			s.Let(`controller`, func(t *testcase.T) interface{} {
-				return controllers.ListControllerByHTTPHandler{Handler: NewTestControllerMockHandler(t, 200, `index`)}
+				return gorest.AsListController(NewTestControllerMockHandler(t, 200, `index`))
 			})
 
 			s.Then(`it will use the index handler`, func(t *testcase.T) {
@@ -106,7 +105,7 @@ func TestHandler_ServeHTTP(t *testing.T) {
 
 		s.When(`controller with create action is provided`, func(s *testcase.Spec) {
 			s.Let(`controller`, func(t *testcase.T) interface{} {
-				return controllers.CreateControllerByHTTPHandler{Handler: NewTestControllerMockHandler(t, http.StatusCreated, `created`)}
+				return gorest.AsCreateController(NewTestControllerMockHandler(t, http.StatusCreated, `created`))
 			})
 
 			s.Then(`it will use the create handler`, func(t *testcase.T) {
@@ -192,7 +191,7 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		s.When(`controller with show action is provided`, func(s *testcase.Spec) {
 			const code = 201
 			s.Let(`controller`, func(t *testcase.T) interface{} {
-				return controllers.ShowControllerByHTTPHandler{Handler: NewTestControllerMockHandler(t, code, `show`)}
+				return gorest.AsShowController(NewTestControllerMockHandler(t, code, `show`))
 			})
 
 			s.Then(`it will use the index handler`, func(t *testcase.T) {
@@ -203,10 +202,10 @@ func TestHandler_ServeHTTP(t *testing.T) {
 
 			andWhenResourceHandlerIs(s, func(s *testcase.Spec) {
 				s.Let(`controller`, func(t *testcase.T) interface{} {
-					return controllers.ShowControllerByHTTPHandler{Handler: GenericResourceHandler{
+					return gorest.AsShowController(GenericResourceHandler{
 						Message:    "show",
 						ContextKey: ContextKeyTestResourceHandlerResourceID{},
-					}}
+					})
 				})
 
 				s.Then(`stored values from the context can be retrieved`, func(t *testcase.T) {
@@ -236,7 +235,7 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		s.When(`controller with update action is provided`, func(s *testcase.Spec) {
 			const code = 203
 			s.Let(`controller`, func(t *testcase.T) interface{} {
-				return controllers.UpdateControllerByHTTPHandler{Handler: NewTestControllerMockHandler(t, code, `update`)}
+				return gorest.AsUpdateController(NewTestControllerMockHandler(t, code, `update`))
 			})
 
 			s.Then(`it will use the index handler`, func(t *testcase.T) {
@@ -247,10 +246,10 @@ func TestHandler_ServeHTTP(t *testing.T) {
 
 			andWhenResourceHandlerIs(s, func(s *testcase.Spec) {
 				s.Let(`controller`, func(t *testcase.T) interface{} {
-					return controllers.UpdateControllerByHTTPHandler{Handler: GenericResourceHandler{
+					return gorest.AsUpdateController(GenericResourceHandler{
 						Message:    "update",
 						ContextKey: ContextKeyTestResourceHandlerResourceID{},
-					}}
+					})
 				})
 
 				s.Then(`stored values from the context can be retrieved`, func(t *testcase.T) {
@@ -275,7 +274,7 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		s.When(`controller with delete action is provided`, func(s *testcase.Spec) {
 			const code = 204
 			s.Let(`controller`, func(t *testcase.T) interface{} {
-				return controllers.DeleteControllerByHTTPHandler{Handler: NewTestControllerMockHandler(t, code, `delete`)}
+				return gorest.AsDeleteController(NewTestControllerMockHandler(t, code, `delete`))
 			})
 
 			s.Then(`it will use the delete handler`, func(t *testcase.T) {
@@ -286,10 +285,10 @@ func TestHandler_ServeHTTP(t *testing.T) {
 
 			andWhenResourceHandlerIs(s, func(s *testcase.Spec) {
 				s.Let(`controller`, func(t *testcase.T) interface{} {
-					return controllers.DeleteControllerByHTTPHandler{Handler: GenericResourceHandler{
+					return gorest.AsDeleteController(GenericResourceHandler{
 						Message:    "delete",
 						ContextKey: ContextKeyTestResourceHandlerResourceID{},
-					}}
+					})
 				})
 
 				s.Then(`stored values from the context can be retrieved`, func(t *testcase.T) {
@@ -305,17 +304,17 @@ func TestHandler_ServeHTTP(t *testing.T) {
 			h := NewTestControllerMockHandler(t, http.StatusForbidden, `FORBIDDEN`)
 			t.Log(`but none of those actions should be called`)
 			return struct {
-				controllers.CreateControllerByHTTPHandler
-				controllers.ListControllerByHTTPHandler
-				controllers.ShowControllerByHTTPHandler
-				controllers.UpdateControllerByHTTPHandler
-				controllers.DeleteControllerByHTTPHandler
+				gorest.CreateController
+				gorest.ListController
+				gorest.ShowController
+				gorest.UpdateController
+				gorest.DeleteController
 			}{
-				CreateControllerByHTTPHandler: controllers.CreateControllerByHTTPHandler{Handler: h},
-				ListControllerByHTTPHandler:   controllers.ListControllerByHTTPHandler{Handler: h},
-				ShowControllerByHTTPHandler:   controllers.ShowControllerByHTTPHandler{Handler: h},
-				UpdateControllerByHTTPHandler: controllers.UpdateControllerByHTTPHandler{Handler: h},
-				DeleteControllerByHTTPHandler: controllers.DeleteControllerByHTTPHandler{Handler: h},
+				CreateController: gorest.AsCreateController(h),
+				ListController:   gorest.AsListController(h),
+				ShowController:   gorest.AsShowController(h),
+				UpdateController: gorest.AsUpdateController(h),
+				DeleteController: gorest.AsDeleteController(h),
 			}
 		})
 
@@ -324,18 +323,18 @@ func TestHandler_ServeHTTP(t *testing.T) {
 				return gorest.NewHandler(
 					struct {
 						gorest.ContextHandler
-						controllers.CreateControllerByHTTPHandler
-						controllers.ListControllerByHTTPHandler
-						controllers.ShowControllerByHTTPHandler
-						controllers.UpdateControllerByHTTPHandler
-						controllers.DeleteControllerByHTTPHandler
+						gorest.CreateController
+						gorest.ListController
+						gorest.ShowController
+						gorest.UpdateController
+						gorest.DeleteController
 					}{
-						ContextHandler:                gorest.DefaultContextHandler{ContextKey: `sub-id`},
-						CreateControllerByHTTPHandler: controllers.CreateControllerByHTTPHandler{Handler: NewTestControllerMockHandler(t, http.StatusOK, `Create`)},
-						ListControllerByHTTPHandler:   controllers.ListControllerByHTTPHandler{Handler: NewTestControllerMockHandler(t, http.StatusOK, `List`)},
-						ShowControllerByHTTPHandler:   controllers.ShowControllerByHTTPHandler{Handler: NewTestControllerMockHandler(t, http.StatusOK, `Show`)},
-						UpdateControllerByHTTPHandler: controllers.UpdateControllerByHTTPHandler{Handler: NewTestControllerMockHandler(t, http.StatusOK, `Update`)},
-						DeleteControllerByHTTPHandler: controllers.DeleteControllerByHTTPHandler{Handler: NewTestControllerMockHandler(t, http.StatusOK, `Delete`)},
+						ContextHandler:   gorest.DefaultContextHandler{ContextKey: `sub-id`},
+						CreateController: gorest.AsCreateController(NewTestControllerMockHandler(t, http.StatusOK, `Create`)),
+						ListController:   gorest.AsListController(NewTestControllerMockHandler(t, http.StatusOK, `List`)),
+						ShowController:   gorest.AsShowController(NewTestControllerMockHandler(t, http.StatusOK, `Show`)),
+						UpdateController: gorest.AsUpdateController(NewTestControllerMockHandler(t, http.StatusOK, `Update`)),
+						DeleteController: gorest.AsDeleteController(NewTestControllerMockHandler(t, http.StatusOK, `Delete`)),
 					},
 				)
 			})
@@ -386,12 +385,12 @@ func TestHandler_ServeHTTP(t *testing.T) {
 			ch := gorest.DefaultContextHandler{ContextKey: `bookID`}
 			books := gorest.NewHandler(struct {
 				gorest.ContextHandler
-				controllers.ShowControllerByHTTPHandler
+				gorest.ShowController
 			}{
 				ContextHandler: ch,
-				ShowControllerByHTTPHandler: controllers.ShowControllerByHTTPHandler{Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				ShowController: gorest.AsShowController(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 					_, _ = fmt.Fprintf(w, `%s`, ch.GetResourceID(r.Context()))
-				})},
+				})),
 			})
 			gorest.Mount(h, `/books/`, books)
 
@@ -450,7 +449,7 @@ func TestHandler_ServeHTTP(t *testing.T) {
 
 					s.And(`action is set`, func(s *testcase.Spec) {
 						s.Let(`controller`, func(t *testcase.T) interface{} {
-							return controllers.CreateControllerByHTTPHandler{Handler: NewTestControllerMockHandler(t, code, msg)}
+							return gorest.AsCreateController(NewTestControllerMockHandler(t, code, msg))
 						})
 
 						thenItWillUseTheControllerHandler(s)
@@ -465,7 +464,7 @@ func TestHandler_ServeHTTP(t *testing.T) {
 
 					s.And(`action is set`, func(s *testcase.Spec) {
 						s.Let(`controller`, func(t *testcase.T) interface{} {
-							return controllers.ListControllerByHTTPHandler{Handler: NewTestControllerMockHandler(t, code, msg)}
+							return gorest.AsListController(NewTestControllerMockHandler(t, code, msg))
 						})
 
 						thenItWillUseTheControllerHandler(s)
@@ -480,7 +479,7 @@ func TestHandler_ServeHTTP(t *testing.T) {
 
 					s.And(`action is set`, func(s *testcase.Spec) {
 						s.Let(`controller`, func(t *testcase.T) interface{} {
-							return controllers.ShowControllerByHTTPHandler{Handler: NewTestControllerMockHandler(t, code, msg)}
+							return gorest.AsShowController(NewTestControllerMockHandler(t, code, msg))
 						})
 
 						thenItWillUseTheControllerHandler(s)
@@ -495,7 +494,7 @@ func TestHandler_ServeHTTP(t *testing.T) {
 
 					s.And(`action is set`, func(s *testcase.Spec) {
 						s.Let(`controller`, func(t *testcase.T) interface{} {
-							return controllers.UpdateControllerByHTTPHandler{Handler: NewTestControllerMockHandler(t, code, msg)}
+							return gorest.AsUpdateController(NewTestControllerMockHandler(t, code, msg))
 						})
 
 						thenItWillUseTheControllerHandler(s)
@@ -510,7 +509,7 @@ func TestHandler_ServeHTTP(t *testing.T) {
 
 					s.And(`action is set`, func(s *testcase.Spec) {
 						s.Let(`controller`, func(t *testcase.T) interface{} {
-							return controllers.DeleteControllerByHTTPHandler{Handler: NewTestControllerMockHandler(t, code, msg)}
+							return gorest.AsDeleteController(NewTestControllerMockHandler(t, code, msg))
 						})
 
 						thenItWillUseTheControllerHandler(s)
@@ -673,9 +672,9 @@ func TestHandler_ServeHTTP(t *testing.T) {
 
 		s.When(`panic occurs during controller action`, func(s *testcase.Spec) {
 			s.Let(`controller`, func(t *testcase.T) interface{} {
-				return controllers.ShowControllerByHTTPHandler{Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				return gorest.AsShowController(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 					panic(`boom`)
-				})}
+				}))
 			})
 
 			s.Then(`custom internal server error handler will be used`, func(t *testcase.T) {
@@ -702,10 +701,10 @@ func TestHandler_ServeHTTP(t *testing.T) {
 func BenchmarkController_ServeHTTP(b *testing.B) {
 	h := gorest.NewHandler(struct {
 		gorest.ContextHandler
-		controllers.ShowControllerByHTTPHandler
+		gorest.ShowController
 	}{
-		ContextHandler:              gorest.DefaultContextHandler{ContextKey: `bench`},
-		ShowControllerByHTTPHandler: controllers.ShowControllerByHTTPHandler{Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})},
+		ContextHandler: gorest.DefaultContextHandler{ContextKey: `bench`},
+		ShowController: gorest.AsShowController(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})),
 	})
 	b.ResetTimer()
 
