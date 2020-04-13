@@ -9,6 +9,8 @@ func AsListController(i interface{}) ListController {
 	switch i := i.(type) {
 	case http.Handler:
 		return httpHandlerAsListController{Handler: i}
+	case http.HandlerFunc:
+		return httpHandlerAsListController{Handler: i}
 	default:
 		panic(fmt.Sprintf(`unknown type: %T`, i))
 	}
@@ -17,6 +19,8 @@ func AsListController(i interface{}) ListController {
 func AsCreateController(i interface{}) CreateController {
 	switch i := i.(type) {
 	case http.Handler:
+		return httpHandlerAsCreateController{Handler: i}
+	case http.HandlerFunc:
 		return httpHandlerAsCreateController{Handler: i}
 	default:
 		panic(fmt.Sprintf(`unknown type: %T`, i))
@@ -27,6 +31,8 @@ func AsShowController(i interface{}) ShowController {
 	switch i := i.(type) {
 	case http.Handler:
 		return httpHandlerAsShowController{Handler: i}
+	case http.HandlerFunc:
+		return httpHandlerAsShowController{Handler: i}
 	default:
 		panic(fmt.Sprintf(`unknown type: %T`, i))
 	}
@@ -36,6 +42,8 @@ func AsUpdateController(i interface{}) UpdateController {
 	switch i := i.(type) {
 	case http.Handler:
 		return httpHandlerAsUpdateController{Handler: i}
+	case http.HandlerFunc:
+		return httpHandlerAsUpdateController{Handler: i}
 	default:
 		panic(fmt.Sprintf(`unknown type: %T`, i))
 	}
@@ -44,6 +52,8 @@ func AsUpdateController(i interface{}) UpdateController {
 func AsDeleteController(i interface{}) DeleteController {
 	switch i := i.(type) {
 	case http.Handler:
+		return httpHandlerAsDeleteController{Handler: i}
+	case http.HandlerFunc:
 		return httpHandlerAsDeleteController{Handler: i}
 	default:
 		panic(fmt.Sprintf(`unknown type: %T`, i))
