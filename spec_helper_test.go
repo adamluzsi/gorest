@@ -68,6 +68,52 @@ func (ctrl ErrorContextHandler) Update(w http.ResponseWriter, r *http.Request) {
 
 func (ctrl ErrorContextHandler) Delete(w http.ResponseWriter, r *http.Request) {}
 
+type StubController struct {
+	ListFunc                http.HandlerFunc
+	CreateFunc              http.HandlerFunc
+	ContextWithResourceFunc func(context.Context, string) (context.Context, bool, error)
+	ShowFunc                http.HandlerFunc
+	UpdateFunc              http.HandlerFunc
+	DeleteFunc              http.HandlerFunc
+}
+
+func (s StubController) List(w http.ResponseWriter, r *http.Request) {
+	if s.ListFunc != nil {
+		s.ListFunc(w, r)
+	}
+}
+
+func (s StubController) Create(w http.ResponseWriter, r *http.Request) {
+	if s.CreateFunc != nil {
+		s.CreateFunc(w, r)
+	}
+}
+
+func (s StubController) ContextWithResource(ctx context.Context, resourceID string) (newContext context.Context, found bool, err error) {
+	if s.ContextWithResourceFunc != nil {
+		return s.ContextWithResourceFunc(ctx, resourceID)
+	}
+	return ctx, true, nil
+}
+
+func (s StubController) Show(w http.ResponseWriter, r *http.Request) {
+	if s.ShowFunc != nil {
+		s.ShowFunc(w, r)
+	}
+}
+
+func (s StubController) Update(w http.ResponseWriter, r *http.Request) {
+	if s.UpdateFunc != nil {
+		s.UpdateFunc(w, r)
+	}
+}
+
+func (s StubController) Delete(w http.ResponseWriter, r *http.Request) {
+	if s.DeleteFunc != nil {
+		s.DeleteFunc(w, r)
+	}
+}
+
 type TestController struct{}
 
 type ContextTestIDKey struct{}

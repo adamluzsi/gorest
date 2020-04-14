@@ -24,6 +24,94 @@ var _ interface {
 	gorest.Multiplexer
 } = &gorest.Handler{}
 
+func TestNewHandler(t *testing.T) {
+	s := testcase.NewSpec(t)
+
+	var request = func(t *testcase.T) *httptest.ResponseRecorder {
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(t.I(`method`).(string), t.I(`path`).(string), nil)
+		gorest.NewHandler(t.I(`controller`)).ServeHTTP(w, r)
+		return w
+	}
+
+	s.Let(`controller`, func(t *testcase.T) interface{} { return TestController{} })
+
+	s.Describe(`#List`, func(s *testcase.Spec) {
+		s.Let(`method`, func(t *testcase.T) interface{} { return http.MethodGet })
+		s.Let(`path`, func(t *testcase.T) interface{} { return `/` })
+
+		s.Then(`it will use List method to reply`, func(t *testcase.T) {
+			require.Contains(t, request(t).Body.String(), `list`)
+		})
+	})
+
+	s.Describe(`#Create`, func(s *testcase.Spec) {
+		s.Let(`method`, func(t *testcase.T) interface{} { return http.MethodPost })
+		s.Let(`path`, func(t *testcase.T) interface{} { return `/` })
+
+		s.Then(`it will use Create method to reply`, func(t *testcase.T) {
+			require.Contains(t, request(t).Body.String(), `create`)
+		})
+	})
+
+	s.Describe(`#Show`, func(s *testcase.Spec) {
+		s.Let(`method`, func(t *testcase.T) interface{} { return http.MethodGet })
+		s.Let(`path`, func(t *testcase.T) interface{} { return `/42` })
+
+		s.Then(`it will use Show method to reply`, func(t *testcase.T) {
+			require.Contains(t, request(t).Body.String(), `show:42`)
+		})
+	})
+
+	s.Describe(`#Update`, func(s *testcase.Spec) {
+		s.Let(`method`, func(t *testcase.T) interface{} { return http.MethodPut })
+		s.Let(`path`, func(t *testcase.T) interface{} { return `/42` })
+
+		s.Then(`it will use Update method to reply`, func(t *testcase.T) {
+			require.Contains(t, request(t).Body.String(), `update:42`)
+		})
+	})
+
+	s.Describe(`#Delete`, func(s *testcase.Spec) {
+		s.Let(`method`, func(t *testcase.T) interface{} { return http.MethodDelete })
+		s.Let(`path`, func(t *testcase.T) interface{} { return `/42` })
+
+		s.Then(`it will use Delete method to reply`, func(t *testcase.T) {
+			require.Contains(t, request(t).Body.String(), `delete:42`)
+		})
+	})
+
+	s.Describe(`#NotFound`, func(s *testcase.Spec) {
+		s.Let(`method`, func(t *testcase.T) interface{} { return http.MethodGet })
+		s.Let(`path`, func(t *testcase.T) interface{} { return `/not-found` })
+
+		s.Then(`it will use the not found method to reply`, func(t *testcase.T) {
+			require.Contains(t, request(t).Body.String(), `not-found`)
+		})
+	})
+
+	s.Describe(`#InternalServerError`, func(s *testcase.Spec) {
+		s.Let(`controller`, func(t *testcase.T) interface{} {
+			return struct {
+				InternalServerErrorController
+				ErrorContextHandler
+			}{
+				InternalServerErrorController: InternalServerErrorController{
+					Code: http.StatusInternalServerError,
+					Msg:  "custom-internal-server-error",
+				},
+				ErrorContextHandler: ErrorContextHandler{Err: errors.New(`boom`)},
+			}
+		})
+		s.Let(`method`, func(t *testcase.T) interface{} { return http.MethodGet })
+		s.Let(`path`, func(t *testcase.T) interface{} { return `/42` })
+
+		s.Then(`it will use the not found method to reply`, func(t *testcase.T) {
+			require.Contains(t, request(t).Body.String(), `custom-internal-server-error`)
+		})
+	})
+}
+
 func TestHandler_ServeHTTP(t *testing.T) {
 	s := testcase.NewSpec(t)
 
@@ -531,6 +619,33 @@ func TestHandler_ServeHTTP(t *testing.T) {
 
 			s.Then(`it will forward the request to the attached handler`, func(t *testcase.T) {
 				require.Equal(t, http.StatusTeapot, serve(t).Code)
+			})
+
+			s.And(`controller provides context preparation`, func(s *testcase.Spec) {
+				s.Let(`controller`, func(t *testcase.T) interface{} {
+					return StubController{
+						ContextWithResourceFunc: func(ctx context.Context, id string) (context.Context, bool, error) {
+							return context.WithValue(ctx, `id`, id), true, nil
+						},
+					}
+				})
+
+				s.Before(func(t *testcase.T) {
+					base := t.I(`pattern`).(string)
+					base = strings.TrimPrefix(base, `/`)
+					base = strings.TrimSuffix(base, `/`)
+					pattern := fmt.Sprintf(`/%s/this`, base)
+					handler(t).Handle(pattern, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+						t.Let(`id in ctx`, r.Context().Value(`id`))
+						const code = http.StatusTeapot
+						http.Error(w, http.StatusText(code), code)
+					}))
+				})
+
+				s.Then(`handler should receive a context that was prepared by the context handler`, func(t *testcase.T) {
+					require.Equal(t, http.StatusTeapot, serve(t).Code)
+					require.Equal(t, resourceID(t), t.I(`id in ctx`))
+				})
 			})
 
 			s.And(`multiple handler attached to the controller and one matches the path more precisely`, func(s *testcase.Spec) {
